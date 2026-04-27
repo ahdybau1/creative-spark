@@ -1,6 +1,6 @@
 # 📊 EduMaster Pro — Suivi de Développement
 
-> Dernière mise à jour : Étape 3 / 8 (Phase 2)
+> Dernière mise à jour : Étape 3 / 8 (Phase 2) **TERMINÉE** ✅
 
 ---
 
@@ -40,8 +40,8 @@ Plateforme SaaS de gestion scolaire **multi-établissements**, **multi-rôles** 
 |---|-------|--------|-------|
 | 1 | Schéma DB Élèves & Académique | ✅ Fait | 8 tables + 9 enums + matricule auto + RLS complète |
 | 2 | Buckets Storage (photos, docs, logos) | ✅ Fait | RLS + sécurisation listing |
-| 3 | Setup établissement (8 types + classes/niveaux) | 🔄 En cours | Configuration école, années scolaires, niveaux selon type, classes |
-| 4 | Inscription élève — wizard 5 étapes | ⏳ À faire | Identité / Médical / Famille / Antécédents / Pièces |
+| 3 | Setup établissement (8 types + classes/niveaux) | ✅ Fait | Wizard 5 étapes, settings, années scolaires, niveaux & classes |
+| 4 | Inscription élève — wizard 5 étapes | 🔄 Prochaine | Identité / Médical / Famille / Antécédents / Pièces |
 | 5 | Liste élèves : table + trombinoscope + filtres + exports | ⏳ À faire | Excel/PDF, recherche, actions groupées |
 | 6 | Dossier élève 360° (fiche complète) | ⏳ À faire | Onglets : Identité, Famille, Médical, Documents, Scolarité, Finances, Comportement |
 | 7 | Réinscription / Transfert / Radiation | ⏳ À faire | Procédures officielles + génération PDF |
@@ -81,14 +81,24 @@ Plateforme SaaS de gestion scolaire **multi-établissements**, **multi-rôles** 
 
 ## ⏭️ Prochaine action immédiate
 
-**Étape 3 — Setup établissement** (en cours)
+**Étape 4 — Inscription élève (wizard multi-étapes)**
 
-1. Page `/app/school` : configuration de l'école (nom, type, pays, devise, langue, calendrier, système de notation, logo)
-2. Page `/app/academic-years` : créer/activer/archiver les années scolaires
-3. Page `/app/classes` : niveaux + classes pour l'année active
-4. **Niveaux pré-remplis** selon le type d'école (ex: lycée → 2nde/1ère/Tle, primaire → CP→CM2, université → L1→M2…)
-5. Wizard "Première configuration" si `school_type` non défini ou aucune année active
-6. Lib `school-types.ts` avec capacités/modules activés/désactivés selon le type
+1. Page `/app/students/new` : wizard 5 étapes (Identité, Médical, Famille, Antécédents, Pièces)
+2. Sauvegarde progressive (draft en localStorage)
+3. Upload photo + documents vers buckets `student-photos` / `student-documents`
+4. Génération automatique du matricule via `generate_matricule()`
+5. Création automatique des comptes parent(s) liés à l'élève
+6. Affectation à une classe de l'année active
+7. Adaptation du formulaire selon le type d'école (auto-école = pas de parent obligatoire, maternelle = focus médical/autorisations…)
+
+### 📁 Fichiers créés à l'étape 3
+- `src/lib/school-types.ts` : catalogue des 8 types, niveaux par défaut, calendriers, systèmes de notation, 25 pays + devises, langues
+- `src/hooks/useSchool.ts` : hooks React Query (`useCurrentSchool`, `useAcademicYears`, `useActiveAcademicYear`, `useLevels`, `useClasses`, `useUpdateSchool`)
+- `src/pages/app/SchoolSetupWizard.tsx` : wizard 5 étapes (Type / Identité / Localisation / Paramètres / Confirmation) — crée école + niveaux par défaut + année active + assigne le rôle Directeur
+- `src/pages/app/SchoolSettings.tsx` : édition complète des paramètres de l'école
+- `src/pages/app/AcademicYears.tsx` : liste, création, activation, archivage des années scolaires
+- `src/pages/app/Classes.tsx` : onglets Classes + Niveaux avec création/suppression
+- `src/App.tsx` : routes `/app/school-setup`, `/app/school`, `/app/academic-years`, `/app/classes`
 
 ---
 
