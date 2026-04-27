@@ -16,6 +16,10 @@ import AppLayout from "./layouts/AppLayout";
 import Dashboard from "./pages/app/Dashboard";
 import Onboarding from "./pages/app/Onboarding";
 import Placeholder from "./pages/app/Placeholder";
+import SchoolSetupWizard from "./pages/app/SchoolSetupWizard";
+import SchoolSettings from "./pages/app/SchoolSettings";
+import AcademicYears from "./pages/app/AcademicYears";
+import ClassesPage from "./pages/app/Classes";
 
 const queryClient = new QueryClient();
 
@@ -33,10 +37,16 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
 
+              {/* Setup wizard (protected mais hors layout pour pleine page) */}
+              <Route path="/app/school-setup" element={<SchoolSetupWizard />} />
+
               {/* App (protected via AppLayout) */}
               <Route path="/app" element={<AppLayout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="onboarding" element={<Onboarding />} />
+                <Route path="school" element={<SchoolSettings />} />
+                <Route path="academic-years" element={<AcademicYears />} />
+                <Route path="classes" element={<ClassesPage />} />
                 {/* Catch-all inside /app → Placeholder for not-yet-built modules */}
                 <Route path="*" element={<Placeholder />} />
               </Route>
