@@ -13,6 +13,8 @@ import {
   CALENDAR_SYSTEMS,
   GRADING_SYSTEMS,
   type SchoolType,
+  type CalendarSystem,
+  type GradingSystem,
 } from "@/lib/school-types";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles } from "lucide-react";
