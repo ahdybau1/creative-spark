@@ -30,8 +30,21 @@ export default function SchoolSetupWizard() {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
-  const [data, setData] = useState({
-    school_type: "high_school" as SchoolType,
+  const [data, setData] = useState<{
+    school_type: SchoolType;
+    name: string;
+    motto: string;
+    founded_year: number;
+    country: string;
+    address: string;
+    phone: string;
+    email: string;
+    website: string;
+    default_language: string;
+    calendar_system: CalendarSystem;
+    grading_system: GradingSystem;
+  }>({
+    school_type: "high_school",
     name: "",
     motto: "",
     founded_year: new Date().getFullYear(),
@@ -41,8 +54,8 @@ export default function SchoolSetupWizard() {
     email: "",
     website: "",
     default_language: "fr",
-    calendar_system: "trimester" as const,
-    grading_system: "out_of_20" as const,
+    calendar_system: "trimester",
+    grading_system: "out_of_20",
   });
 
   const update = <K extends keyof typeof data>(k: K, v: (typeof data)[K]) =>
