@@ -702,6 +702,22 @@ export type Database = {
         Args: { _school_id: string; _user_id: string }
         Returns: boolean
       }
+      setup_demo_school:
+        | {
+            Args: {
+              _academic_year_end?: string
+              _academic_year_name?: string
+              _academic_year_start?: string
+              _country?: string
+              _currency?: string
+              _default_language?: string
+              _levels?: Json
+              _name: string
+              _school_type?: Database["public"]["Enums"]["school_type"]
+            }
+            Returns: string
+          }
+        | { Args: { _payload: Json }; Returns: string }
     }
     Enums: {
       app_role:
