@@ -1,6 +1,6 @@
 # 📊 EduMaster Pro — Suivi de Développement
 
-> Dernière mise à jour : Étape 3 / 8 (Phase 2) **TERMINÉE** ✅
+> Dernière mise à jour : Étape 4 / 8 (Phase 2) **TERMINÉE** ✅
 
 ---
 
@@ -41,9 +41,9 @@ Plateforme SaaS de gestion scolaire **multi-établissements**, **multi-rôles** 
 | 1 | Schéma DB Élèves & Académique | ✅ Fait | 8 tables + 9 enums + matricule auto + RLS complète |
 | 2 | Buckets Storage (photos, docs, logos) | ✅ Fait | RLS + sécurisation listing |
 | 3 | Setup établissement (8 types + classes/niveaux) | ✅ Fait | Wizard 5 étapes, settings, années scolaires, niveaux & classes |
-| 4 | Inscription élève — wizard 5 étapes | 🔄 Prochaine | Identité / Médical / Famille / Antécédents / Pièces |
-| 5 | Liste élèves : table + trombinoscope + filtres + exports | ⏳ À faire | Excel/PDF, recherche, actions groupées |
-| 6 | Dossier élève 360° (fiche complète) | ⏳ À faire | Onglets : Identité, Famille, Médical, Documents, Scolarité, Finances, Comportement |
+| 4 | Inscription élève — wizard 5 étapes | ✅ Fait | Identité / Médical / Famille / Scolarité / Confirmation + matricule auto + photo |
+| 5 | Liste élèves : table + trombinoscope + filtres + exports | 🔄 En cours | Vue table + trombinoscope ✅ · Filtres avancés + exports ⏳ |
+| 6 | Dossier élève 360° (fiche complète) | ⏳ Prochaine | Onglets : Identité, Famille, Médical, Documents, Scolarité, Finances, Comportement |
 | 7 | Réinscription / Transfert / Radiation | ⏳ À faire | Procédures officielles + génération PDF |
 | 8 | Génération PDF (carte scolaire, certificats) | ⏳ À faire | jsPDF + QR de vérification |
 
@@ -81,24 +81,25 @@ Plateforme SaaS de gestion scolaire **multi-établissements**, **multi-rôles** 
 
 ## ⏭️ Prochaine action immédiate
 
-**Étape 4 — Inscription élève (wizard multi-étapes)**
+**Étape 6 — Dossier élève 360°** (`/app/students/:id`)
 
-1. Page `/app/students/new` : wizard 5 étapes (Identité, Médical, Famille, Antécédents, Pièces)
-2. Sauvegarde progressive (draft en localStorage)
-3. Upload photo + documents vers buckets `student-photos` / `student-documents`
-4. Génération automatique du matricule via `generate_matricule()`
-5. Création automatique des comptes parent(s) liés à l'élève
-6. Affectation à une classe de l'année active
-7. Adaptation du formulaire selon le type d'école (auto-école = pas de parent obligatoire, maternelle = focus médical/autorisations…)
+1. Page profil avec onglets : Identité, Famille, Médical, Scolarité, Documents, Finances, Comportement
+2. Édition inline des champs (avec sauvegarde optimiste)
+3. Téléversement de documents (acte naissance, carnet santé, photos d'identité…)
+4. Historique scolaire complet (toutes inscriptions)
+5. Bouton actions : Réinscrire / Transférer / Radier / Générer carte scolaire PDF
 
-### 📁 Fichiers créés à l'étape 3
-- `src/lib/school-types.ts` : catalogue des 8 types, niveaux par défaut, calendriers, systèmes de notation, 25 pays + devises, langues
-- `src/hooks/useSchool.ts` : hooks React Query (`useCurrentSchool`, `useAcademicYears`, `useActiveAcademicYear`, `useLevels`, `useClasses`, `useUpdateSchool`)
-- `src/pages/app/SchoolSetupWizard.tsx` : wizard 5 étapes (Type / Identité / Localisation / Paramètres / Confirmation) — crée école + niveaux par défaut + année active + assigne le rôle Directeur
-- `src/pages/app/SchoolSettings.tsx` : édition complète des paramètres de l'école
-- `src/pages/app/AcademicYears.tsx` : liste, création, activation, archivage des années scolaires
-- `src/pages/app/Classes.tsx` : onglets Classes + Niveaux avec création/suppression
-- `src/App.tsx` : routes `/app/school-setup`, `/app/school`, `/app/academic-years`, `/app/classes`
+### 📁 Fichiers créés à l'étape 4
+- `src/hooks/useStudents.ts` : `useStudents`, `useStudent`, `useCreateStudent` (avec génération matricule via RPC + insertion guardians + enrollment), `uploadStudentPhoto`
+- `src/components/PhotoUpload.tsx` : composant réutilisable upload photo (drag, preview, suppression, 5 Mo max)
+- `src/pages/app/StudentRegistration.tsx` : wizard 5 étapes (Identité, Médical, Famille, Scolarité, Confirmation) avec stepper, validation par étape, photo, multi-tuteurs, affectation classe
+- `src/pages/app/StudentsList.tsx` : liste élèves avec recherche, vue **Table** + vue **Trombinoscope**, badges de statut, actions vers nouvelle inscription
+- `src/App.tsx` : routes `/app/students` et `/app/students/new`
+
+### 🎨 Règles UX validées
+- **Pas de footer** dans l'application (préparation app mobile)
+- Stepper cliquable en arrière uniquement (pas de saut en avant)
+- Actions disabled tant que les champs requis ne sont pas remplis
 
 ---
 
