@@ -1,0 +1,3 @@
+REVOKE EXECUTE ON FUNCTION public.setup_demo_school(text, public.school_type, text, text, text, jsonb, text, date, date) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.setup_demo_school(text, public.school_type, text, text, text, jsonb, text, date, date) FROM anon;
+GRANT EXECUTE ON FUNCTION public.setup_demo_school(text, public.school_type, text, text, text, jsonb, text, date, date) TO authenticated;
