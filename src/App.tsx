@@ -20,6 +20,8 @@ import SchoolSetupWizard from "./pages/app/SchoolSetupWizard";
 import SchoolSettings from "./pages/app/SchoolSettings";
 import AcademicYears from "./pages/app/AcademicYears";
 import ClassesPage from "./pages/app/Classes";
+import StudentsList from "./pages/app/StudentsList";
+import StudentRegistration from "./pages/app/StudentRegistration";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +49,8 @@ const App = () => (
                 <Route path="school" element={<SchoolSettings />} />
                 <Route path="academic-years" element={<AcademicYears />} />
                 <Route path="classes" element={<ClassesPage />} />
+                <Route path="students" element={<StudentsList />} />
+                <Route path="students/new" element={<StudentRegistration />} />
                 {/* Catch-all inside /app → Placeholder for not-yet-built modules */}
                 <Route path="*" element={<Placeholder />} />
               </Route>
