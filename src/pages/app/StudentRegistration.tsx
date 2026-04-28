@@ -48,7 +48,7 @@ const STEPS = [
 
 interface GuardianForm {
   full_name: string;
-  guardian_type: "father" | "mother" | "tutor" | "other" | "self";
+  guardian_type: "father" | "mother" | "legal_guardian" | "other";
   phone: string;
   email: string;
   occupation: string;
@@ -88,7 +88,7 @@ export default function StudentRegistration() {
   const [nationality, setNationality] = useState(school?.country ?? "");
   const [motherTongue, setMotherTongue] = useState("");
   const [address, setAddress] = useState("");
-  const [city, setCity] = useState(school?.city ?? "");
+  const [city, setCity] = useState("");
 
   // Medical
   const [bloodType, setBloodType] = useState<string>("");
@@ -221,7 +221,7 @@ export default function StudentRegistration() {
             Nouvelle inscription
           </h1>
           <p className="text-sm text-muted-foreground">
-            {school.name} · Année {activeYear?.label ?? "non définie"}
+            {school.name} · Année {activeYear?.name ?? "non définie"}
           </p>
         </div>
       </div>
