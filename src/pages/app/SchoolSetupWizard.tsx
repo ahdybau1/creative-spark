@@ -89,10 +89,14 @@ export default function SchoolSetupWizard() {
       const country = COUNTRIES.find((c) => c.code === data.country);
       const currency = country?.currency ?? "EUR";
 
-      // 1. Create school
-      const { data: school, error: schoolErr } = await supabase
-        .from("schools")
-        .insert({
+      const meta = SCHOOL_TYPES[data.school_type];
+      const today = new Date();
+      const isSecondHalf = today.getMonth() >= 6; // Jul-Dec → start of new year
+      const startYear = isSecondHalf ? today.getFullYear() : today.getFullYear() - 1;
+      const yearName = `${startYear}-${startYear + 1}`;
+
+      const { error: setupErr } = await (supabase as any).rpc("setup_demo_school", {
+        _payload: {
           name: data.name,
           school_type: data.school_type,
           motto: data.motto || null,
@@ -106,53 +110,15 @@ export default function SchoolSetupWizard() {
           website: data.website || null,
           calendar_system: data.calendar_system,
           grading_system: data.grading_system,
-        })
-        .select()
-        .single();
-
-      if (schoolErr || !school) throw schoolErr ?? new Error("Création école impossible");
-
-      // 2. Link profile to school
-      const { error: profileErr } = await supabase
-        .from("profiles")
-        .update({ school_id: school.id })
-        .eq("id", user.id);
-      if (profileErr) throw profileErr;
-
-      // 3. Assign director role to current user
-      const { error: roleErr } = await supabase
-        .from("user_roles")
-        .insert({ user_id: user.id, role: "director", school_id: school.id });
-      if (roleErr && roleErr.code !== "23505") throw roleErr;
-
-      // 4. Create default levels for this school type
-      const meta = SCHOOL_TYPES[data.school_type];
-      const { error: levelsErr } = await supabase.from("levels").insert(
-        meta.defaultLevels.map((l) => ({
-          school_id: school.id,
-          name: l.name,
-          short_code: l.short_code,
-          cycle: l.cycle ?? null,
-          order_index: l.order_index,
-        })),
-      );
-      if (levelsErr) throw levelsErr;
-
-      // 5. Create current academic year (active)
-      const today = new Date();
-      const isSecondHalf = today.getMonth() >= 6; // Jul-Dec → start of new year
-      const startYear = isSecondHalf ? today.getFullYear() : today.getFullYear() - 1;
-      const yearName = `${startYear}-${startYear + 1}`;
-      const { error: yearErr } = await supabase.from("academic_years").insert({
-        school_id: school.id,
-        name: yearName,
-        start_date: `${startYear}-09-01`,
-        end_date: `${startYear + 1}-07-15`,
-        is_active: true,
+          levels: meta.defaultLevels,
+          academic_year_name: yearName,
+          academic_year_start: `${startYear}-09-01`,
+          academic_year_end: `${startYear + 1}-07-15`,
+        },
       });
-      if (yearErr) throw yearErr;
+      if (setupErr) throw setupErr;
 
-      // 6. Refresh state
+      // Refresh state
       await qc.invalidateQueries();
       setActiveRole("director");
       toast.success("École créée avec succès !", {
