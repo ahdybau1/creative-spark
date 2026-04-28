@@ -1,6 +1,6 @@
 # 📊 EduMaster Pro — Suivi de Développement
 
-> Dernière mise à jour : Étape 4 / 8 (Phase 2) **TERMINÉE** ✅
+> Dernière mise à jour : Correctif onboarding école **TERMINÉ** ✅
 
 ---
 
@@ -100,6 +100,12 @@ Plateforme SaaS de gestion scolaire **multi-établissements**, **multi-rôles** 
 - **Pas de footer** dans l'application (préparation app mobile)
 - Stepper cliquable en arrière uniquement (pas de saut en avant)
 - Actions disabled tant que les champs requis ne sont pas remplis
+
+### 🛠️ Correctif appliqué — Onboarding école
+- Le blocage `new row violates row-level security policy for table "schools"` a été corrigé.
+- La création d'établissement passe maintenant par une opération sécurisée et atomique côté Lovable Cloud : école + rattachement profil + rôle directeur + niveaux + année scolaire active.
+- Le wizard `/app/onboarding` utilise cette opération au lieu d'enchaîner plusieurs insertions sensibles depuis l'interface.
+- **Prochaine action** : tester la création d'école depuis `/app/onboarding`, puis reprendre l'étape 6 — dossier élève 360°.
 
 ---
 
