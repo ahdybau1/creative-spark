@@ -82,7 +82,7 @@ export function useCreateStudent() {
           student_id: student.id,
           class_id: payload.class_id,
           academic_year_id: payload.academic_year_id,
-          status: "active",
+          status: "enrolled",
         });
         if (eErr) throw eErr;
       }
