@@ -423,8 +423,7 @@ export default function StudentRegistration() {
                         <SelectContent>
                           <SelectItem value="father">Père</SelectItem>
                           <SelectItem value="mother">Mère</SelectItem>
-                          <SelectItem value="tutor">Tuteur légal</SelectItem>
-                          <SelectItem value="self">Lui/Elle-même</SelectItem>
+                          <SelectItem value="legal_guardian">Tuteur légal</SelectItem>
                           <SelectItem value="other">Autre</SelectItem>
                         </SelectContent>
                       </Select>
