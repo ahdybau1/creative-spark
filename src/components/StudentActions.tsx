@@ -207,7 +207,7 @@ function TransferDialog({ open, onClose, student }: { open: boolean; onClose: ()
       // Clore inscription active
       await supabase
         .from("enrollments")
-        .update({ status: "transferred", ended_at: new Date().toISOString() })
+        .update({ status: "withdrawn", ended_at: new Date().toISOString() })
         .eq("student_id", student.id)
         .eq("status", "enrolled");
 
@@ -300,7 +300,7 @@ function ExpelDialog({ open, onClose, student }: { open: boolean; onClose: () =>
 
       const { error: trfErr } = await supabase.from("student_transfers").insert({
         student_id: student.id,
-        transfer_type: type === "expelled" ? "expulsion" : "archive",
+        transfer_type: "expulsion" as const,
         reason,
         effective_date: date,
         certificate_number,
@@ -310,7 +310,7 @@ function ExpelDialog({ open, onClose, student }: { open: boolean; onClose: () =>
       // Clore inscription
       await supabase
         .from("enrollments")
-        .update({ status: type === "expelled" ? "expelled" : "withdrawn", ended_at: new Date().toISOString() })
+        .update({ status: "withdrawn" as const, ended_at: new Date().toISOString() })
         .eq("student_id", student.id)
         .eq("status", "enrolled");
 
