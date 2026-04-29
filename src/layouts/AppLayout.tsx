@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -17,13 +18,19 @@ import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { useAuth } from "@/providers/AuthProvider";
 import { NAV_BY_ROLE } from "@/lib/navigation";
 import { ROLE_META } from "@/lib/roles";
-import { LogOut, User as UserIcon, Search, Loader2 } from "lucide-react";
+import { LogOut, User as UserIcon, Search, Loader2, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AppLayout() {
   const { user, loading, activeRole, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
