@@ -56,11 +56,13 @@ type DocumentType = Database["public"]["Enums"]["document_type"];
 const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
   { value: "birth_certificate", label: "Acte de naissance" },
   { value: "id_card", label: "Pièce d'identité" },
-  { value: "previous_school_records", label: "Bulletins précédents" },
+  { value: "passport", label: "Passeport" },
+  { value: "previous_report", label: "Bulletins précédents" },
   { value: "medical_certificate", label: "Certificat médical" },
   { value: "vaccination_record", label: "Carnet de vaccination" },
   { value: "photo", label: "Photo d'identité" },
-  { value: "transfer_certificate", label: "Certificat de transfert" },
+  { value: "address_proof", label: "Justificatif de domicile" },
+  { value: "parent_id", label: "Pièce d'identité parent" },
   { value: "other", label: "Autre" },
 ];
 
