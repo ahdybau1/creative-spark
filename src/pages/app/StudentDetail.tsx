@@ -17,10 +17,12 @@ import {
   Download,
   Trash2,
   ShieldAlert,
+  History,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStudent } from "@/hooks/useStudents";
+import { StudentActions } from "@/components/StudentActions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -107,13 +109,14 @@ export default function StudentDetail() {
   return (
     <div className="container max-w-6xl py-6 px-4">
       {/* Top bar */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between gap-2">
         <Button variant="ghost" size="sm" asChild className="gap-2">
           <Link to="/app/students">
             <ArrowLeft className="h-4 w-4" />
             Retour
           </Link>
         </Button>
+        <StudentActions student={student} />
       </div>
 
       {/* Header card */}
@@ -153,7 +156,7 @@ export default function StudentDetail() {
 
       {/* Tabs */}
       <Tabs defaultValue="identity" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 h-auto">
           <TabsTrigger value="identity" className="gap-1.5">
             <User className="h-3.5 w-3.5" /> Identité
           </TabsTrigger>
@@ -168,6 +171,9 @@ export default function StudentDetail() {
           </TabsTrigger>
           <TabsTrigger value="documents" className="gap-1.5">
             <FileText className="h-3.5 w-3.5" /> Documents
+          </TabsTrigger>
+          <TabsTrigger value="history" className="gap-1.5">
+            <History className="h-3.5 w-3.5" /> Parcours
           </TabsTrigger>
         </TabsList>
 
