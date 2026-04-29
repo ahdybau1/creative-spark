@@ -1,6 +1,6 @@
 # 📊 EduMaster Pro — Suivi de Développement
 
-> Dernière mise à jour : Correctif onboarding école **TERMINÉ** ✅
+> Dernière mise à jour : Étape 6 — Dossier élève 360° **TERMINÉE** ✅
 
 ---
 
@@ -42,9 +42,9 @@ Plateforme SaaS de gestion scolaire **multi-établissements**, **multi-rôles** 
 | 2 | Buckets Storage (photos, docs, logos) | ✅ Fait | RLS + sécurisation listing |
 | 3 | Setup établissement (8 types + classes/niveaux) | ✅ Fait | Wizard 5 étapes, settings, années scolaires, niveaux & classes |
 | 4 | Inscription élève — wizard 5 étapes | ✅ Fait | Identité / Médical / Famille / Scolarité / Confirmation + matricule auto + photo |
-| 5 | Liste élèves : table + trombinoscope + filtres + exports | 🔄 En cours | Vue table + trombinoscope ✅ · Filtres avancés + exports ⏳ |
-| 6 | Dossier élève 360° (fiche complète) | ⏳ Prochaine | Onglets : Identité, Famille, Médical, Documents, Scolarité, Finances, Comportement |
-| 7 | Réinscription / Transfert / Radiation | ⏳ À faire | Procédures officielles + génération PDF |
+| 5 | Liste élèves : table + trombinoscope + filtres + exports | 🔄 En cours | Vue table + trombinoscope + recherche ✅ · Filtres avancés + exports ⏳ |
+| 6 | Dossier élève 360° (fiche complète) | ✅ Fait | 5 onglets : Identité, Famille, Médical, Scolarité, Documents — édition inline + upload sécurisé |
+| 7 | Réinscription / Transfert / Radiation | ⏳ Prochaine | Procédures officielles + génération PDF |
 | 8 | Génération PDF (carte scolaire, certificats) | ⏳ À faire | jsPDF + QR de vérification |
 
 ### 🗄️ Schéma DB créé en Phase 2
@@ -81,13 +81,13 @@ Plateforme SaaS de gestion scolaire **multi-établissements**, **multi-rôles** 
 
 ## ⏭️ Prochaine action immédiate
 
-**Étape 6 — Dossier élève 360°** (`/app/students/:id`)
+**Étape 7 — Réinscription / Transfert / Radiation**
 
-1. Page profil avec onglets : Identité, Famille, Médical, Scolarité, Documents, Finances, Comportement
-2. Édition inline des champs (avec sauvegarde optimiste)
-3. Téléversement de documents (acte naissance, carnet santé, photos d'identité…)
-4. Historique scolaire complet (toutes inscriptions)
-5. Bouton actions : Réinscrire / Transférer / Radier / Générer carte scolaire PDF
+1. Modale "Changer de classe" depuis le dossier élève (passage à la nouvelle année)
+2. Procédure de transfert sortant : motif, école destinataire, date effective, génération certificat PDF
+3. Procédure de radiation : motif, archivage automatique
+4. Historique des transferts dans un nouvel onglet "Parcours"
+5. Mise à jour du statut élève (`active` → `transferred` / `archived`)
 
 ### 📁 Fichiers créés à l'étape 4
 - `src/hooks/useStudents.ts` : `useStudents`, `useStudent`, `useCreateStudent` (avec génération matricule via RPC + insertion guardians + enrollment), `uploadStudentPhoto`
