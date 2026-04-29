@@ -1,6 +1,6 @@
 # 📊 EduMaster Pro — Suivi de Développement
 
-> Dernière mise à jour : Étape 6 — Dossier élève 360° **TERMINÉE** ✅
+> Dernière mise à jour : Étape 7 — Réinscription / Transfert / Radiation **TERMINÉE** ✅ + sidebar mobile corrigée
 
 ---
 
