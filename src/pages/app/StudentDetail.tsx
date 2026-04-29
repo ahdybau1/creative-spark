@@ -17,10 +17,12 @@ import {
   Download,
   Trash2,
   ShieldAlert,
+  History,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStudent } from "@/hooks/useStudents";
+import { StudentActions } from "@/components/StudentActions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -107,13 +109,14 @@ export default function StudentDetail() {
   return (
     <div className="container max-w-6xl py-6 px-4">
       {/* Top bar */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between gap-2">
         <Button variant="ghost" size="sm" asChild className="gap-2">
           <Link to="/app/students">
             <ArrowLeft className="h-4 w-4" />
             Retour
           </Link>
         </Button>
+        <StudentActions student={student} />
       </div>
 
       {/* Header card */}
@@ -153,7 +156,7 @@ export default function StudentDetail() {
 
       {/* Tabs */}
       <Tabs defaultValue="identity" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 h-auto">
           <TabsTrigger value="identity" className="gap-1.5">
             <User className="h-3.5 w-3.5" /> Identité
           </TabsTrigger>
@@ -168,6 +171,9 @@ export default function StudentDetail() {
           </TabsTrigger>
           <TabsTrigger value="documents" className="gap-1.5">
             <FileText className="h-3.5 w-3.5" /> Documents
+          </TabsTrigger>
+          <TabsTrigger value="history" className="gap-1.5">
+            <History className="h-3.5 w-3.5" /> Parcours
           </TabsTrigger>
         </TabsList>
 
@@ -185,6 +191,9 @@ export default function StudentDetail() {
         </TabsContent>
         <TabsContent value="documents" className="mt-6">
           <DocumentsTab student={student} />
+        </TabsContent>
+        <TabsContent value="history" className="mt-6">
+          <HistoryTab student={student} />
         </TabsContent>
       </Tabs>
     </div>
@@ -695,5 +704,119 @@ function StatusBadge({ status }: { status: string }) {
     <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold", meta.className)}>
       {meta.label}
     </span>
+  );
+}
+
+/* ============ History Tab (transferts / radiations) ============ */
+function HistoryTab({ student }: { student: any }) {
+  const { data: transfers, isLoading } = useQuery({
+    queryKey: ["transfers", student.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("student_transfers")
+        .select("*")
+        .eq("student_id", student.id)
+        .order("effective_date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const enrollments = (student.enrollments ?? []).slice().sort(
+    (a: any, b: any) => new Date(b.enrolled_at).getTime() - new Date(a.enrolled_at).getTime()
+  );
+
+  const typeLabel = (t: string) => {
+    const map: Record<string, string> = {
+      incoming: "Arrivée (transfert entrant)",
+      outgoing: "Transfert sortant",
+      expulsion: "Radiation / Renvoi",
+      graduation: "Fin de scolarité",
+    };
+    return map[t] ?? t;
+  };
+
+  const typeClass = (t: string) =>
+    t === "expulsion"
+      ? "bg-destructive/15 text-destructive border-destructive/30"
+      : t === "outgoing"
+      ? "bg-warning/15 text-warning border-warning/30"
+      : "bg-info/15 text-info border-info/30";
+
+  return (
+    <Card className="p-6">
+      <h3 className="font-display font-bold text-lg mb-6 flex items-center gap-2">
+        <History className="h-5 w-5 text-primary" />
+        Parcours administratif
+      </h3>
+
+      {/* Transferts */}
+      <h4 className="font-semibold mb-3 text-sm uppercase tracking-wider text-muted-foreground">
+        Transferts & radiations
+      </h4>
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : !transfers || transfers.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-4">Aucun transfert ni radiation enregistré.</p>
+      ) : (
+        <div className="space-y-3 mb-8">
+          {transfers.map((t: any) => (
+            <div key={t.id} className="rounded-lg border p-4 bg-muted/20">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                  <Badge className={cn("mb-2", typeClass(t.transfer_type))}>{typeLabel(t.transfer_type)}</Badge>
+                  <div className="font-medium text-sm">
+                    {t.destination_school ?? t.origin_school ?? "—"}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    Effectif le {new Date(t.effective_date).toLocaleDateString()}
+                    {t.certificate_number && (
+                      <> · N° certificat <span className="font-mono">{t.certificate_number}</span></>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {t.reason && (
+                <div className="mt-3 text-sm text-foreground/80 border-l-2 border-primary/30 pl-3">
+                  {t.reason}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Inscriptions */}
+      <h4 className="font-semibold mb-3 text-sm uppercase tracking-wider text-muted-foreground">
+        Historique des inscriptions
+      </h4>
+      {enrollments.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-4">Aucune inscription en classe.</p>
+      ) : (
+        <div className="space-y-2">
+          {enrollments.map((e: any) => (
+            <div key={e.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
+              <div>
+                <div className="font-medium text-sm">
+                  {e.class?.name ?? "Classe"}
+                  {e.class?.level?.name && (
+                    <span className="text-muted-foreground"> · {e.class.level.name}</span>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Du {new Date(e.enrolled_at).toLocaleDateString()}
+                  {e.ended_at && ` au ${new Date(e.ended_at).toLocaleDateString()}`}
+                </div>
+              </div>
+              <Badge variant={e.status === "enrolled" ? "default" : "secondary"} className="text-[10px]">
+                {e.status}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }

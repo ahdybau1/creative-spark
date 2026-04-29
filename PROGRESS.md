@@ -1,6 +1,6 @@
 # 📊 EduMaster Pro — Suivi de Développement
 
-> Dernière mise à jour : Étape 6 — Dossier élève 360° **TERMINÉE** ✅
+> Dernière mise à jour : Étape 7 — Réinscription / Transfert / Radiation **TERMINÉE** ✅ + sidebar mobile corrigée
 
 ---
 
@@ -44,8 +44,8 @@ Plateforme SaaS de gestion scolaire **multi-établissements**, **multi-rôles** 
 | 4 | Inscription élève — wizard 5 étapes | ✅ Fait | Identité / Médical / Famille / Scolarité / Confirmation + matricule auto + photo |
 | 5 | Liste élèves : table + trombinoscope + filtres + exports | 🔄 En cours | Vue table + trombinoscope + recherche ✅ · Filtres avancés + exports ⏳ |
 | 6 | Dossier élève 360° (fiche complète) | ✅ Fait | 5 onglets : Identité, Famille, Médical, Scolarité, Documents — édition inline + upload sécurisé |
-| 7 | Réinscription / Transfert / Radiation | ⏳ Prochaine | Procédures officielles + génération PDF |
-| 8 | Génération PDF (carte scolaire, certificats) | ⏳ À faire | jsPDF + QR de vérification |
+| 7 | Réinscription / Transfert / Radiation | ✅ Fait | Réinscription année active, transfert sortant + certificat, radiation, onglet Parcours |
+| 8 | Génération PDF (carte scolaire, certificats) | ⏳ Prochaine | jsPDF + QR de vérification |
 
 ### 🗄️ Schéma DB créé en Phase 2
 
@@ -81,13 +81,21 @@ Plateforme SaaS de gestion scolaire **multi-établissements**, **multi-rôles** 
 
 ## ⏭️ Prochaine action immédiate
 
-**Étape 7 — Réinscription / Transfert / Radiation**
+**Étape 8 — Génération PDF (carte scolaire, certificats officiels)**
 
-1. Modale "Changer de classe" depuis le dossier élève (passage à la nouvelle année)
-2. Procédure de transfert sortant : motif, école destinataire, date effective, génération certificat PDF
-3. Procédure de radiation : motif, archivage automatique
-4. Historique des transferts dans un nouvel onglet "Parcours"
-5. Mise à jour du statut élève (`active` → `transferred` / `archived`)
+1. Carte scolaire élève (PDF avec photo, matricule, classe, QR de vérification)
+2. Certificat de scolarité officiel
+3. Certificat de transfert (depuis l'historique)
+4. Certificat de radiation
+5. Bouton "Imprimer / Télécharger" depuis le dossier élève et l'onglet Parcours
+
+### 🛠️ Étape 7 — Détails techniques
+- `src/components/StudentActions.tsx` : menu déroulant Actions avec 3 dialogues (Réinscrire, Transférer, Radier)
+- Réinscription : clôt l'inscription active (`withdrawn`) et crée une nouvelle inscription dans l'année active
+- Transfert : génère un n° de certificat `TRF-YYYY-XXXXX`, enregistre dans `student_transfers`, passe l'élève en `transferred`
+- Radiation : 2 sous-types (renvoi disciplinaire / archivage), n° certificat `RAD-YYYY-XXXXX`
+- Nouvel onglet "Parcours" : timeline des transferts + historique complet des inscriptions
+- Sidebar mobile/tablette corrigée : drawer Sheet avec bouton ☰ dans le header (ferme auto au changement de page)
 
 ### 📁 Fichiers créés à l'étape 4
 - `src/hooks/useStudents.ts` : `useStudents`, `useStudent`, `useCreateStudent` (avec génération matricule via RPC + insertion guardians + enrollment), `uploadStudentPhoto`
