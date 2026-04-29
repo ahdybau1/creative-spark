@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   GraduationCap,
   LayoutGrid,
@@ -26,6 +26,7 @@ import { useStudents } from "@/hooks/useStudents";
 import { cn } from "@/lib/utils";
 
 export default function StudentsList() {
+  const navigate = useNavigate();
   const { data: school } = useCurrentSchool();
   const { data: students, isLoading } = useStudents(school?.id);
   const [view, setView] = useState<"table" | "grid">("table");
@@ -120,7 +121,7 @@ export default function StudentsList() {
               {filtered.map((s: any) => {
                 const enrollment = s.enrollments?.[0];
                 return (
-                  <TableRow key={s.id} className="cursor-pointer hover:bg-muted/40">
+                  <TableRow key={s.id} onClick={() => navigate(`/app/students/${s.id}`)} className="cursor-pointer hover:bg-muted/40">
                     <TableCell>
                       <Avatar className="h-9 w-9">
                         {s.photo_url && <AvatarImage src={s.photo_url} />}
@@ -161,6 +162,7 @@ export default function StudentsList() {
           {filtered.map((s: any) => (
             <Card
               key={s.id}
+              onClick={() => navigate(`/app/students/${s.id}`)}
               className="p-4 flex flex-col items-center text-center hover:shadow-lg transition cursor-pointer"
             >
               <Avatar className="h-20 w-20 mb-3 ring-2 ring-background shadow-md">
