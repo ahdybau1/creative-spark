@@ -192,6 +192,9 @@ export default function StudentDetail() {
         <TabsContent value="documents" className="mt-6">
           <DocumentsTab student={student} />
         </TabsContent>
+        <TabsContent value="history" className="mt-6">
+          <HistoryTab student={student} />
+        </TabsContent>
       </Tabs>
     </div>
   );
