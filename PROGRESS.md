@@ -1,6 +1,6 @@
 # 📊 EduMaster Pro — Suivi de Développement
 
-> Dernière mise à jour : Étape 7 — Réinscription / Transfert / Radiation **TERMINÉE** ✅ + sidebar mobile corrigée
+> Dernière mise à jour : Correctif RLS inscription élève **APPLIQUÉ** ✅
 
 ---
 
@@ -143,6 +143,7 @@ Plateforme SaaS de gestion scolaire **multi-établissements**, **multi-rôles** 
 
 ### 🔧 Correctif inscription élève
 - Meilleur affichage du message d'erreur Postgres (`details`, `hint`) dans le formulaire pour faciliter le diagnostic.
+- Correction de la récursion infinie RLS sur `students` : la règle parent/enfant passe maintenant par `is_guardian_of_student(...)`, une fonction sécurisée qui évite la boucle `students` ↔ `student_guardians`.
 
 ### Prochaine action
 - Étape 9 — Personnel et comptes : invitations enseignants / personnel, attribution de rôles depuis l'interface directeur.
