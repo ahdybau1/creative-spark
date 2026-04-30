@@ -702,6 +702,10 @@ export type Database = {
         Args: { _school_id: string; _user_id: string }
         Returns: boolean
       }
+      is_guardian_of_student: {
+        Args: { _student_id: string; _user_id: string }
+        Returns: boolean
+      }
       setup_demo_school:
         | {
             Args: {
