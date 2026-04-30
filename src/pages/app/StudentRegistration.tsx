@@ -336,9 +336,9 @@ export default function StudentRegistration() {
                 <Select value={bloodType} onValueChange={setBloodType}>
                   <SelectTrigger id="blood"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                   <SelectContent>
-                    {["a_pos", "a_neg", "b_pos", "b_neg", "ab_pos", "ab_neg", "o_pos", "o_neg", "unknown"].map((b) => (
+                    {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "unknown"].map((b) => (
                       <SelectItem key={b} value={b}>
-                        {b.replace("_pos", "+").replace("_neg", "-").toUpperCase().replace("UNKNOWN", "Inconnu")}
+                        {b === "unknown" ? "Inconnu" : b}
                       </SelectItem>
                     ))}
                   </SelectContent>
