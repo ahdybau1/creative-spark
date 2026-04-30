@@ -117,7 +117,10 @@ export default function StudentDetail() {
             Retour
           </Link>
         </Button>
-        <StudentActions student={student} />
+        <div className="flex items-center gap-2">
+          <StudentDocuments student={student} />
+          <StudentActions student={student} />
+        </div>
       </div>
 
       {/* Header card */}
