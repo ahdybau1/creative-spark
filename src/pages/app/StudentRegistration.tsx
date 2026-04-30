@@ -181,7 +181,14 @@ export default function StudentRegistration() {
       toast.success(`Élève ${fullName} inscrit • Matricule ${created.matricule}`);
       navigate("/app/students");
     } catch (err: any) {
-      toast.error(err.message || "Erreur lors de l'inscription");
+      console.error("[StudentRegistration] submit error:", err);
+      const msg =
+        err?.message ||
+        err?.error_description ||
+        err?.details ||
+        err?.hint ||
+        "Erreur lors de l'inscription";
+      toast.error(msg);
     }
   };
 

@@ -129,3 +129,20 @@ Plateforme SaaS de gestion scolaire **multi-établissements**, **multi-rôles** 
 | Phase 8 | Communication | Messagerie, annonces, notifications |
 | Phase 9 | Modules avancés | Transport GPS, cantine, bibliothèque, infirmerie |
 | Phase 10 | Innovations | IA pédagogique, gamification, panic button, blockchain diplômes |
+
+---
+
+## ✅ Étape 8 — Documents officiels PDF (TERMINÉE)
+
+- `src/lib/pdf/student-pdf.ts` : 3 générateurs (`generateStudentIDCard`, `generateEnrollmentCertificate`, `generateTransferCertificate`)
+- En-tête commun avec couleur de l'école (HSL → RGB), logo et coordonnées
+- Carte d'élève format CR80 avec photo et **QR code** (`qrcode`)
+- Certificat de scolarité A4 + certificats transfert / radiation A4
+- `src/components/StudentDocuments.tsx` : menu "Documents" sur la fiche élève
+- Dépendances : `jspdf`, `qrcode`, `@types/qrcode`
+
+### 🔧 Correctif inscription élève
+- Meilleur affichage du message d'erreur Postgres (`details`, `hint`) dans le formulaire pour faciliter le diagnostic.
+
+### Prochaine action
+- Étape 9 — Personnel et comptes : invitations enseignants / personnel, attribution de rôles depuis l'interface directeur.
