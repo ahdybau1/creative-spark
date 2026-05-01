@@ -1,6 +1,24 @@
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 
+/** Output mode for generated PDFs */
+export type PdfOutput = "download" | "print";
+
+/** Save or open+print depending on mode */
+function emit(doc: jsPDF, filename: string, mode: PdfOutput) {
+  if (mode === "print") {
+    const blobUrl = doc.output("bloburl") as unknown as string;
+    const win = window.open(blobUrl, "_blank");
+    if (win) {
+      win.addEventListener("load", () => {
+        try { win.focus(); win.print(); } catch { /* ignore */ }
+      });
+    }
+  } else {
+    doc.save(filename);
+  }
+}
+
 export interface SchoolPdfInfo {
   name: string;
   motto?: string | null;
@@ -163,7 +181,8 @@ function drawFooter(doc: jsPDF, school: SchoolPdfInfo) {
 export async function generateStudentIDCard(
   student: StudentPdfInfo,
   school: SchoolPdfInfo,
-  klass?: ClassPdfInfo
+  klass?: ClassPdfInfo,
+  output: PdfOutput = "download"
 ) {
   // Carte format paysage CR80 agrandie (85.6 x 54 mm) sur A6
   const doc = new jsPDF({ unit: "mm", format: [90, 56], orientation: "landscape" });
@@ -235,7 +254,7 @@ export async function generateStudentIDCard(
   doc.setFillColor(r, g, b);
   doc.rect(0, 52, 90, 4, "F");
 
-  doc.save(`carte-${student.matricule}.pdf`);
+  emit(doc, `carte-${student.matricule}.pdf`, output);
 }
 
 /* ---------- 2. Certificat de scolarité ---------- */
@@ -243,7 +262,8 @@ export async function generateStudentIDCard(
 export async function generateEnrollmentCertificate(
   student: StudentPdfInfo,
   school: SchoolPdfInfo,
-  klass: ClassPdfInfo
+  klass: ClassPdfInfo,
+  output: PdfOutput = "download"
 ) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   let y = await drawHeader(doc, school, "Certificat de scolarité");
@@ -306,7 +326,7 @@ export async function generateEnrollmentCertificate(
   doc.text("Signature et cachet", pageW - 20, y, { align: "right" });
 
   drawFooter(doc, school);
-  doc.save(`certificat-scolarite-${student.matricule}.pdf`);
+  emit(doc, `certificat-scolarite-${student.matricule}.pdf`, output);
 }
 
 /* ---------- 3. Certificat de transfert / radiation ---------- */
@@ -321,7 +341,9 @@ export async function generateTransferCertificate(opts: {
   certificate_number?: string | null;
   last_class?: string | null;
   academic_year?: string | null;
+  output?: PdfOutput;
 }) {
+  const output = opts.output ?? "download";
   const { student, school, type, reason, effective_date, destination_school, certificate_number, last_class, academic_year } = opts;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const title = type === "outgoing" ? "Certificat de transfert" : "Certificat de radiation";
@@ -396,5 +418,155 @@ export async function generateTransferCertificate(opts: {
 
   drawFooter(doc, school);
   const fileBase = type === "outgoing" ? "transfert" : "radiation";
-  doc.save(`${fileBase}-${student.matricule}.pdf`);
+  emit(doc, `${fileBase}-${student.matricule}.pdf`, output);
+}
+
+/* ---------- 4. PACK COMPLET (carte + scolarité + dernier transfert) ---------- */
+
+export async function generateAllStudentDocuments(opts: {
+  student: StudentPdfInfo;
+  school: SchoolPdfInfo;
+  klass: ClassPdfInfo;
+  lastTransfer?: {
+    type: "outgoing" | "expulsion";
+    reason: string;
+    effective_date: string;
+    destination_school?: string | null;
+    certificate_number?: string | null;
+  } | null;
+  output?: PdfOutput;
+}) {
+  const { student, school, klass, lastTransfer, output = "print" } = opts;
+
+  // On délègue : génère chaque doc en blob, puis on fusionne via jsPDF en plusieurs pages
+  // Approche pragmatique : générer un doc A4 multi-pages reprenant les visuels des certificats,
+  // et insérer la carte sur sa propre page A4.
+
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const [r, g, b] = hslToRgb(school.primary_color);
+
+  // ---- PAGE 1 : Carte d'élève centrée sur A4 ----
+  await drawHeader(doc, school, "Carte d'élève");
+  // Cadre de carte au centre
+  const cardW = 90, cardH = 56;
+  const cx = (pageW - cardW) / 2;
+  const cy = 70;
+
+  doc.setFillColor(250, 250, 250);
+  doc.rect(cx, cy, cardW, cardH, "F");
+  doc.setFillColor(r, g, b);
+  doc.rect(cx, cy, cardW, 12, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.text(school.name.toUpperCase().slice(0, 40), cx + 4, cy + 5);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6);
+  doc.text("CARTE D'ÉLÈVE", cx + 4, cy + 9);
+
+  if (student.photo_url) {
+    const photo = await loadImageDataUrl(student.photo_url);
+    if (photo) {
+      try { doc.addImage(photo, "JPEG", cx + 4, cy + 16, 22, 28); } catch { /* */ }
+    }
+  } else {
+    doc.setDrawColor(200);
+    doc.rect(cx + 4, cy + 16, 22, 28);
+  }
+
+  doc.setTextColor(20);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text(fullName(student), cx + 30, cy + 20);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.text(`Matricule : ${student.matricule}`, cx + 30, cy + 26);
+  doc.text(`Né(e) le : ${fmtDate(student.date_of_birth)}`, cx + 30, cy + 30);
+  if (klass.name) doc.text(`Classe : ${klass.name}`, cx + 30, cy + 34);
+  if (klass.academic_year) doc.text(`Année : ${klass.academic_year}`, cx + 30, cy + 38);
+
+  try {
+    const qr = await QRCode.toDataURL(`student:${student.id}|mat:${student.matricule}`, { margin: 0, width: 200 });
+    doc.addImage(qr, "PNG", cx + 70, cy + 32, 16, 16);
+  } catch { /* */ }
+
+  doc.setFillColor(r, g, b);
+  doc.rect(cx, cy + 52, cardW, 4, "F");
+
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(9);
+  doc.setTextColor(120);
+  doc.text("À découper et plastifier au format CR80 (85,6 × 54 mm)", pageW / 2, cy + cardH + 12, { align: "center" });
+
+  drawFooter(doc, school);
+
+  // ---- PAGE 2 : Certificat de scolarité ----
+  doc.addPage();
+  let y = await drawHeader(doc, school, "Certificat de scolarité");
+  doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(20);
+  const ref = `CS-${new Date().getFullYear()}-${student.matricule}`;
+  doc.text(`Référence : ${ref}`, pageW - 20, y, { align: "right" });
+  y += 14;
+  doc.text("Le Directeur de l'établissement soussigné certifie que :", 20, y);
+  y += 12;
+  doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+  doc.text(fullName(student).toUpperCase(), pageW / 2, y, { align: "center" });
+  y += 8;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+  const lines = [
+    `Matricule : ${student.matricule}`,
+    `Né(e) le : ${fmtDate(student.date_of_birth)}${student.place_of_birth ? " à " + student.place_of_birth : ""}`,
+    `Sexe : ${student.gender === "male" ? "Masculin" : student.gender === "female" ? "Féminin" : "Autre"}`,
+  ];
+  lines.forEach((l) => { doc.text(l, pageW / 2, y, { align: "center" }); y += 6; });
+  y += 8;
+  const klassLabel = [klass.level_name, klass.name].filter(Boolean).join(" / ") || "—";
+  const txt = `est régulièrement inscrit(e) en classe de ${klassLabel} au titre de l'année scolaire ${klass.academic_year ?? "—"} dans notre établissement.`;
+  const wrapped = doc.splitTextToSize(txt, pageW - 40);
+  doc.text(wrapped, 20, y);
+  y += wrapped.length * 6 + 16;
+  const today = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  doc.text(`Fait le ${today}`, pageW - 20, y, { align: "right" });
+  y += 28;
+  doc.setFont("helvetica", "italic");
+  doc.text("Signature et cachet", pageW - 20, y, { align: "right" });
+  drawFooter(doc, school);
+
+  // ---- PAGE 3 (optionnelle) : dernier transfert/radiation ----
+  if (lastTransfer) {
+    doc.addPage();
+    const title = lastTransfer.type === "outgoing" ? "Certificat de transfert" : "Certificat de radiation";
+    let y2 = await drawHeader(doc, school, title);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(20);
+    if (lastTransfer.certificate_number) {
+      doc.text(`N° ${lastTransfer.certificate_number}`, pageW - 20, y2, { align: "right" });
+      y2 += 12;
+    }
+    doc.text("Le Directeur de l'établissement soussigné atteste que :", 20, y2);
+    y2 += 12;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+    doc.text(fullName(student).toUpperCase(), pageW / 2, y2, { align: "center" });
+    y2 += 12;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+    const body = lastTransfer.type === "outgoing"
+      ? `est autorisé(e) à être transféré(e)${lastTransfer.destination_school ? ` vers : ${lastTransfer.destination_school}` : ""}, à compter du ${fmtDate(lastTransfer.effective_date)}.`
+      : `a été radié(e) de notre établissement à compter du ${fmtDate(lastTransfer.effective_date)}.`;
+    const wb = doc.splitTextToSize(body, pageW - 40);
+    doc.text(wb, 20, y2);
+    y2 += wb.length * 6 + 8;
+    doc.setFont("helvetica", "bold"); doc.text("Motif :", 20, y2);
+    doc.setFont("helvetica", "normal");
+    const rw = doc.splitTextToSize(lastTransfer.reason, pageW - 40);
+    doc.text(rw, 20, y2 + 6);
+    y2 += rw.length * 6 + 24;
+    doc.text(`Fait le ${today}`, pageW - 20, y2, { align: "right" });
+    y2 += 28;
+    doc.setFont("helvetica", "italic");
+    doc.text("Signature et cachet", pageW - 20, y2, { align: "right" });
+    drawFooter(doc, school);
+  }
+
+  emit(doc, `dossier-${student.matricule}.pdf`, output);
 }

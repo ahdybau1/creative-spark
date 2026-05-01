@@ -46,7 +46,16 @@ export default function AppLayout() {
 
   if (!user) return null;
 
-  const groups = activeRole ? NAV_BY_ROLE[activeRole] : [];
+  // Mode dev : on fusionne la navigation de tous les rôles, dédupliquée par href
+  const allItems = new Map<string, ReturnType<typeof Object> extends never ? never : any>();
+  Object.values(NAV_BY_ROLE).forEach((roleGroups) => {
+    roleGroups.forEach((g) => {
+      g.items.forEach((it) => {
+        if (!allItems.has(it.href)) allItems.set(it.href, it);
+      });
+    });
+  });
+  const groups = [{ label: "Tous les modules (mode dev)", items: Array.from(allItems.values()) }];
   const roleMeta = activeRole ? ROLE_META[activeRole] : null;
   const initials =
     (user.user_metadata?.full_name as string | undefined)
