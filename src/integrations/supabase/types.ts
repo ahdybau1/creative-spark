@@ -335,6 +335,48 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["app_role"]
+          school_id: string
+          status: string
+          temp_password: string | null
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          invited_by: string
+          role: Database["public"]["Enums"]["app_role"]
+          school_id: string
+          status?: string
+          temp_password?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          school_id?: string
+          status?: string
+          temp_password?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       student_documents: {
         Row: {
           created_at: string
@@ -705,6 +747,18 @@ export type Database = {
       is_guardian_of_student: {
         Args: { _student_id: string; _user_id: string }
         Returns: boolean
+      }
+      list_school_staff: {
+        Args: { _school_id: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          email: string
+          full_name: string
+          phone: string
+          roles: Database["public"]["Enums"]["app_role"][]
+          user_id: string
+        }[]
       }
       setup_demo_school:
         | {

@@ -145,5 +145,17 @@ Plateforme SaaS de gestion scolaire **multi-établissements**, **multi-rôles** 
 - Meilleur affichage du message d'erreur Postgres (`details`, `hint`) dans le formulaire pour faciliter le diagnostic.
 - Correction de la récursion infinie RLS sur `students` : la règle parent/enfant passe maintenant par `is_guardian_of_student(...)`, une fonction sécurisée qui évite la boucle `students` ↔ `student_guardians`.
 
+## ✅ Étape 9 — Personnel & Comptes (TERMINÉE)
+
+- Table `staff_invitations` (école, email, rôle, invité par, mot de passe temporaire, statut)
+- Fonction RPC `list_school_staff(school_id)` : liste des comptes de l'école avec rôles agrégés (réservée directeurs / RH)
+- Edge function `invite-staff` : crée le compte (email confirmé), lie au school_id, attribue le rôle, retourne mot de passe temporaire (à transmettre une seule fois)
+- Page `/app/staff` (visible directeur / RH) :
+  - Liste du personnel : avatar, email, rôles avec icônes & couleurs
+  - Bouton « Nouvel utilisateur » : nom / email / téléphone / rôle initial
+  - Dialogue d'identifiants généré → Email + mot de passe copiables
+  - Ajout / retrait de rôles inline (multi-rôles supportés)
+- Sécurité : impossible d'attribuer `super_admin`, RLS sur `user_roles` déjà en place côté directeur
+
 ### Prochaine action
-- Étape 9 — Personnel et comptes : invitations enseignants / personnel, attribution de rôles depuis l'interface directeur.
+- **Étape 10 — Module Académique** : matières, emplois du temps, cahier de textes (Phase 4).
