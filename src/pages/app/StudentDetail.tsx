@@ -74,6 +74,13 @@ export default function StudentDetail() {
   const navigate = useNavigate();
   const { data: student, isLoading } = useStudent(id);
 
+  const age = useMemo(() => {
+    if (!student?.date_of_birth) return 0;
+    const dob = new Date(student.date_of_birth);
+    const diff = Date.now() - dob.getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+  }, [student?.date_of_birth]);
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-24">
@@ -97,11 +104,6 @@ export default function StudentDetail() {
   }
 
   const fullName = `${student.first_name} ${student.last_name}`;
-  const age = useMemo(() => {
-    const dob = new Date(student.date_of_birth);
-    const diff = Date.now() - dob.getTime();
-    return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
-  }, [student.date_of_birth]);
 
   const currentEnrollment = (student as any).enrollments?.find(
     (e: any) => e.status === "enrolled"
