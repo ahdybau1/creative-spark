@@ -1,6 +1,24 @@
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 
+/** Output mode for generated PDFs */
+export type PdfOutput = "download" | "print";
+
+/** Save or open+print depending on mode */
+function emit(doc: jsPDF, filename: string, mode: PdfOutput) {
+  if (mode === "print") {
+    const blobUrl = doc.output("bloburl") as unknown as string;
+    const win = window.open(blobUrl, "_blank");
+    if (win) {
+      win.addEventListener("load", () => {
+        try { win.focus(); win.print(); } catch { /* ignore */ }
+      });
+    }
+  } else {
+    doc.save(filename);
+  }
+}
+
 export interface SchoolPdfInfo {
   name: string;
   motto?: string | null;
