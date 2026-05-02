@@ -132,6 +132,7 @@ export default function StudentsList() {
                 <TableHead>Classe</TableHead>
                 <TableHead>Genre</TableHead>
                 <TableHead>Statut</TableHead>
+                <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -167,6 +168,26 @@ export default function StudentsList() {
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={s.status} />
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/app/students/${s.id}`)} className="gap-2">
+                            <Pencil className="h-4 w-4" /> Voir / Modifier
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(s.id, `${s.first_name} ${s.last_name}`)}
+                            className="gap-2 text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" /> Supprimer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 );
