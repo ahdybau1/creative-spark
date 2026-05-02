@@ -259,10 +259,12 @@ function StaffRowItem({
   staff,
   onRemoveRole,
   onAddRole,
+  onRemoveAll,
 }: {
   staff: StaffRow;
   onRemoveRole: (r: AppRole) => void;
   onAddRole: (r: AppRole) => void;
+  onRemoveAll: () => void;
 }) {
   const initials = (staff.full_name ?? staff.email ?? "?")
     .split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
@@ -306,23 +308,34 @@ function StaffRowItem({
         </div>
       </TableCell>
       <TableCell className="text-right">
-        {availableRoles.length > 0 && (
-          <Select onValueChange={(v) => onAddRole(v as AppRole)}>
-            <SelectTrigger className="w-[180px] inline-flex">
-              <SelectValue placeholder="+ Ajouter un rôle" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableRoles.map((r) => {
-                const meta = ROLE_META[r];
-                return (
-                  <SelectItem key={r} value={r}>
-                    {meta.label}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        )}
+        <div className="inline-flex items-center gap-2">
+          {availableRoles.length > 0 && (
+            <Select onValueChange={(v) => onAddRole(v as AppRole)}>
+              <SelectTrigger className="w-[180px] inline-flex">
+                <SelectValue placeholder="+ Ajouter un rôle" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableRoles.map((r) => {
+                  const meta = ROLE_META[r];
+                  return (
+                    <SelectItem key={r} value={r}>
+                      {meta.label}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive hover:text-destructive"
+            onClick={onRemoveAll}
+            title="Retirer du personnel"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
   );
