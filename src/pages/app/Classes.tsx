@@ -45,6 +45,15 @@ export default function ClassesPage() {
 
   const [openLvl, setOpenLvl] = useState(false);
   const [openCls, setOpenCls] = useState(false);
+  const [editLvl, setEditLvl] = useState<any | null>(null);
+  const [editCls, setEditCls] = useState<any | null>(null);
+
+  const deleteClass = async (id: string, name: string) => {
+    if (!confirm(`Supprimer la classe « ${name} » ?\nCela retirera aussi les inscriptions associées.`)) return;
+    const { error } = await supabase.from("classes").delete().eq("id", id);
+    if (error) toast.error("Erreur", { description: error.message });
+    else { toast.success("Classe supprimée"); qc.invalidateQueries({ queryKey: ["classes"] }); }
+  };
 
   if (!school) {
     return (
