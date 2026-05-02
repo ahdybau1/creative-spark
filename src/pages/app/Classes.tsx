@@ -27,7 +27,12 @@ import {
   Users as UsersIcon,
   School as SchoolIcon,
   Trash2,
+  Pencil,
+  MoreVertical,
 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
