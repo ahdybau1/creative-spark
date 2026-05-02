@@ -460,3 +460,125 @@ function NewClassDialog({
     </DialogContent>
   );
 }
+
+function EditLevelDialog({ level, onSaved }: { level: any; onSaved: () => void }) {
+  const [name, setName] = useState(level.name);
+  const [code, setCode] = useState(level.short_code);
+  const [cycle, setCycle] = useState(level.cycle ?? "");
+  const [order, setOrder] = useState(level.order_index ?? 1);
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    if (!name || !code) return;
+    setLoading(true);
+    const { error } = await supabase.from("levels").update({
+      name, short_code: code.toUpperCase(),
+      cycle: cycle || null, order_index: order,
+    }).eq("id", level.id);
+    setLoading(false);
+    if (error) toast.error("Erreur", { description: error.message });
+    else { toast.success("Niveau mis à jour"); onSaved(); }
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader><DialogTitle>Modifier le niveau</DialogTitle></DialogHeader>
+      <div className="space-y-4 py-2">
+        <div className="space-y-2">
+          <Label>Nom complet *</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label>Code court *</Label>
+            <Input value={code} onChange={(e) => setCode(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Ordre</Label>
+            <Input type="number" value={order} onChange={(e) => setOrder(Number(e.target.value))} />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Cycle (optionnel)</Label>
+          <Input value={cycle} onChange={(e) => setCycle(e.target.value)} />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button onClick={submit} disabled={loading || !name || !code} className="gap-2">
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          Enregistrer
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
+
+function EditClassDialog({
+  klass, levels, onSaved,
+}: {
+  klass: any;
+  levels: { id: string; name: string; short_code: string }[];
+  onSaved: () => void;
+}) {
+  const [name, setName] = useState(klass.name);
+  const [section, setSection] = useState(klass.section ?? "");
+  const [levelId, setLevelId] = useState(klass.level_id ?? klass.level?.id ?? "");
+  const [capacity, setCapacity] = useState(klass.capacity ?? 30);
+  const [room, setRoom] = useState(klass.room ?? "");
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    if (!name || !levelId) return;
+    setLoading(true);
+    const { error } = await supabase.from("classes").update({
+      level_id: levelId, name, section: section || null, capacity, room: room || null,
+    }).eq("id", klass.id);
+    setLoading(false);
+    if (error) toast.error("Erreur", { description: error.message });
+    else { toast.success("Classe mise à jour"); onSaved(); }
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader><DialogTitle>Modifier la classe</DialogTitle></DialogHeader>
+      <div className="space-y-4 py-2">
+        <div className="space-y-2">
+          <Label>Nom de la classe *</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label>Niveau *</Label>
+          <select
+            value={levelId}
+            onChange={(e) => setLevelId(e.target.value)}
+            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+          >
+            {levels.map((l) => (
+              <option key={l.id} value={l.id}>{l.short_code} — {l.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label>Section / Filière (optionnel)</Label>
+          <Input value={section} onChange={(e) => setSection(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label>Capacité</Label>
+            <Input type="number" value={capacity} onChange={(e) => setCapacity(Number(e.target.value))} />
+          </div>
+          <div className="space-y-2">
+            <Label>Salle (optionnel)</Label>
+            <Input value={room} onChange={(e) => setRoom(e.target.value)} />
+          </div>
+        </div>
+      </div>
+      <DialogFooter>
+        <Button onClick={submit} disabled={loading || !name || !levelId} className="gap-2">
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          Enregistrer
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
