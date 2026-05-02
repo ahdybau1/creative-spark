@@ -119,21 +119,46 @@ export default function AcademicYears() {
                   {format(new Date(y.end_date), "PPP", { locale: fr })}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {!y.is_active && !y.is_archived && (
                   <Button variant="outline" size="sm" onClick={() => setActive(y.id)}>
                     Activer
                   </Button>
                 )}
+                <Button variant="ghost" size="icon" onClick={() => setEditing(y)} title="Modifier">
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 {!y.is_archived && (
-                  <Button variant="ghost" size="sm" onClick={() => archive(y.id)}>
+                  <Button variant="ghost" size="icon" onClick={() => archive(y.id)} title="Archiver">
                     <Archive className="h-4 w-4" />
                   </Button>
                 )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => remove(y.id, y.name)}
+                  title="Supprimer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {editing && (
+        <Dialog open onOpenChange={(o) => !o && setEditing(null)}>
+          <EditYearDialog
+            year={editing}
+            onSaved={() => {
+              setEditing(null);
+              qc.invalidateQueries({ queryKey: ["academic-years"] });
+              qc.invalidateQueries({ queryKey: ["active-year"] });
+            }}
+          />
+        </Dialog>
       )}
     </div>
   );
