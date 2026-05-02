@@ -7,6 +7,9 @@ import {
   Loader2,
   Search,
   UserPlus,
+  MoreVertical,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,8 +24,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useCurrentSchool } from "@/hooks/useSchool";
 import { useStudents } from "@/hooks/useStudents";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function StudentsList() {
@@ -31,6 +40,14 @@ export default function StudentsList() {
   const { data: students, isLoading } = useStudents(school?.id);
   const [view, setView] = useState<"table" | "grid">("table");
   const [search, setSearch] = useState("");
+  const qc = useQueryClient();
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Supprimer définitivement l'élève « ${name} » ?\nCette action retire aussi inscriptions et documents.`)) return;
+    const { error } = await supabase.from("students").delete().eq("id", id);
+    if (error) toast.error("Erreur", { description: error.message });
+    else { toast.success("Élève supprimé"); qc.invalidateQueries({ queryKey: ["students"] }); }
+  };
 
   const filtered = useMemo(() => {
     if (!students) return [];
@@ -115,6 +132,7 @@ export default function StudentsList() {
                 <TableHead>Classe</TableHead>
                 <TableHead>Genre</TableHead>
                 <TableHead>Statut</TableHead>
+                <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -150,6 +168,26 @@ export default function StudentsList() {
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={s.status} />
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/app/students/${s.id}`)} className="gap-2">
+                            <Pencil className="h-4 w-4" /> Voir / Modifier
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(s.id, `${s.first_name} ${s.last_name}`)}
+                            className="gap-2 text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" /> Supprimer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 );

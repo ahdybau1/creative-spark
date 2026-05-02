@@ -27,7 +27,12 @@ import {
   Users as UsersIcon,
   School as SchoolIcon,
   Trash2,
+  Pencil,
+  MoreVertical,
 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
@@ -40,6 +45,15 @@ export default function ClassesPage() {
 
   const [openLvl, setOpenLvl] = useState(false);
   const [openCls, setOpenCls] = useState(false);
+  const [editLvl, setEditLvl] = useState<any | null>(null);
+  const [editCls, setEditCls] = useState<any | null>(null);
+
+  const deleteClass = async (id: string, name: string) => {
+    if (!confirm(`Supprimer la classe « ${name} » ?\nCela retirera aussi les inscriptions associées.`)) return;
+    const { error } = await supabase.from("classes").delete().eq("id", id);
+    if (error) toast.error("Erreur", { description: error.message });
+    else { toast.success("Classe supprimée"); qc.invalidateQueries({ queryKey: ["classes"] }); }
+  };
 
   if (!school) {
     return (
@@ -136,7 +150,27 @@ export default function ClassesPage() {
                         <div className="text-xs text-muted-foreground mt-0.5">{c.section}</div>
                       )}
                     </div>
-                    {c.level && <Badge variant="secondary">{c.level.short_code}</Badge>}
+                    <div className="flex items-center gap-1">
+                      {c.level && <Badge variant="secondary">{c.level.short_code}</Badge>}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setEditCls(c)} className="gap-2">
+                            <Pencil className="h-4 w-4" /> Modifier
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => deleteClass(c.id, c.name)}
+                            className="gap-2 text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" /> Supprimer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                   <div className="mt-4 space-y-1.5 text-sm">
                     <div className="flex items-center justify-between text-muted-foreground">
@@ -190,7 +224,7 @@ export default function ClassesPage() {
                     <th className="text-left px-4 py-3">Code</th>
                     <th className="text-left px-4 py-3">Nom</th>
                     <th className="text-left px-4 py-3">Cycle</th>
-                    <th className="text-right px-4 py-3 w-16">Action</th>
+                    <th className="text-right px-4 py-3 w-24">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -200,6 +234,15 @@ export default function ClassesPage() {
                       <td className="px-4 py-3">{l.name}</td>
                       <td className="px-4 py-3 text-muted-foreground">{l.cycle ?? "—"}</td>
                       <td className="px-4 py-3 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setEditLvl(l)}
+                          title="Modifier"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -213,6 +256,7 @@ export default function ClassesPage() {
                               qc.invalidateQueries({ queryKey: ["levels"] });
                             }
                           }}
+                          title="Supprimer"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -225,6 +269,31 @@ export default function ClassesPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Edit dialogs */}
+      {editLvl && (
+        <Dialog open onOpenChange={(o) => !o && setEditLvl(null)}>
+          <EditLevelDialog
+            level={editLvl}
+            onSaved={() => {
+              setEditLvl(null);
+              qc.invalidateQueries({ queryKey: ["levels"] });
+            }}
+          />
+        </Dialog>
+      )}
+      {editCls && (
+        <Dialog open onOpenChange={(o) => !o && setEditCls(null)}>
+          <EditClassDialog
+            klass={editCls}
+            levels={levels ?? []}
+            onSaved={() => {
+              setEditCls(null);
+              qc.invalidateQueries({ queryKey: ["classes"] });
+            }}
+          />
+        </Dialog>
+      )}
     </div>
   );
 }
@@ -386,6 +455,128 @@ function NewClassDialog({
         <Button onClick={submit} disabled={loading || !name || !levelId} className="gap-2">
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           Créer
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
+
+function EditLevelDialog({ level, onSaved }: { level: any; onSaved: () => void }) {
+  const [name, setName] = useState(level.name);
+  const [code, setCode] = useState(level.short_code);
+  const [cycle, setCycle] = useState(level.cycle ?? "");
+  const [order, setOrder] = useState(level.order_index ?? 1);
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    if (!name || !code) return;
+    setLoading(true);
+    const { error } = await supabase.from("levels").update({
+      name, short_code: code.toUpperCase(),
+      cycle: cycle || null, order_index: order,
+    }).eq("id", level.id);
+    setLoading(false);
+    if (error) toast.error("Erreur", { description: error.message });
+    else { toast.success("Niveau mis à jour"); onSaved(); }
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader><DialogTitle>Modifier le niveau</DialogTitle></DialogHeader>
+      <div className="space-y-4 py-2">
+        <div className="space-y-2">
+          <Label>Nom complet *</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label>Code court *</Label>
+            <Input value={code} onChange={(e) => setCode(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Ordre</Label>
+            <Input type="number" value={order} onChange={(e) => setOrder(Number(e.target.value))} />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Cycle (optionnel)</Label>
+          <Input value={cycle} onChange={(e) => setCycle(e.target.value)} />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button onClick={submit} disabled={loading || !name || !code} className="gap-2">
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          Enregistrer
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
+
+function EditClassDialog({
+  klass, levels, onSaved,
+}: {
+  klass: any;
+  levels: { id: string; name: string; short_code: string }[];
+  onSaved: () => void;
+}) {
+  const [name, setName] = useState(klass.name);
+  const [section, setSection] = useState(klass.section ?? "");
+  const [levelId, setLevelId] = useState(klass.level_id ?? klass.level?.id ?? "");
+  const [capacity, setCapacity] = useState(klass.capacity ?? 30);
+  const [room, setRoom] = useState(klass.room ?? "");
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    if (!name || !levelId) return;
+    setLoading(true);
+    const { error } = await supabase.from("classes").update({
+      level_id: levelId, name, section: section || null, capacity, room: room || null,
+    }).eq("id", klass.id);
+    setLoading(false);
+    if (error) toast.error("Erreur", { description: error.message });
+    else { toast.success("Classe mise à jour"); onSaved(); }
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader><DialogTitle>Modifier la classe</DialogTitle></DialogHeader>
+      <div className="space-y-4 py-2">
+        <div className="space-y-2">
+          <Label>Nom de la classe *</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label>Niveau *</Label>
+          <select
+            value={levelId}
+            onChange={(e) => setLevelId(e.target.value)}
+            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+          >
+            {levels.map((l) => (
+              <option key={l.id} value={l.id}>{l.short_code} — {l.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label>Section / Filière (optionnel)</Label>
+          <Input value={section} onChange={(e) => setSection(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label>Capacité</Label>
+            <Input type="number" value={capacity} onChange={(e) => setCapacity(Number(e.target.value))} />
+          </div>
+          <div className="space-y-2">
+            <Label>Salle (optionnel)</Label>
+            <Input value={room} onChange={(e) => setRoom(e.target.value)} />
+          </div>
+        </div>
+      </div>
+      <DialogFooter>
+        <Button onClick={submit} disabled={loading || !name || !levelId} className="gap-2">
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          Enregistrer
         </Button>
       </DialogFooter>
     </DialogContent>

@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
-import { UserPlus, Copy, Loader2, Briefcase, ShieldOff } from "lucide-react";
+import { UserPlus, Copy, Loader2, Briefcase, ShieldOff, Trash2 } from "lucide-react";
 
 interface StaffRow {
   user_id: string;
@@ -106,6 +106,22 @@ export default function Staff() {
     onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
   });
 
+  const removeAllRolesMutation = useMutation({
+    mutationFn: async (user_id: string) => {
+      const { error } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", user_id)
+        .eq("school_id", school!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["staff", school?.id] });
+      toast({ title: "Membre retiré du personnel" });
+    },
+    onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+  });
+
   if (schoolLoading) {
     return <div className="p-8 flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Chargement…</div>;
   }
@@ -171,6 +187,11 @@ export default function Staff() {
                       staff={s}
                       onRemoveRole={(role) => removeRoleMutation.mutate({ user_id: s.user_id, role })}
                       onAddRole={(role) => addRoleMutation.mutate({ user_id: s.user_id, role })}
+                      onRemoveAll={() => {
+                        if (confirm(`Retirer ${s.full_name ?? s.email} du personnel ?\nTous ses rôles dans cette école seront supprimés.`)) {
+                          removeAllRolesMutation.mutate(s.user_id);
+                        }
+                      }}
                     />
                   ))}
                 </TableBody>
@@ -238,10 +259,12 @@ function StaffRowItem({
   staff,
   onRemoveRole,
   onAddRole,
+  onRemoveAll,
 }: {
   staff: StaffRow;
   onRemoveRole: (r: AppRole) => void;
   onAddRole: (r: AppRole) => void;
+  onRemoveAll: () => void;
 }) {
   const initials = (staff.full_name ?? staff.email ?? "?")
     .split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
@@ -285,23 +308,34 @@ function StaffRowItem({
         </div>
       </TableCell>
       <TableCell className="text-right">
-        {availableRoles.length > 0 && (
-          <Select onValueChange={(v) => onAddRole(v as AppRole)}>
-            <SelectTrigger className="w-[180px] inline-flex">
-              <SelectValue placeholder="+ Ajouter un rôle" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableRoles.map((r) => {
-                const meta = ROLE_META[r];
-                return (
-                  <SelectItem key={r} value={r}>
-                    {meta.label}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        )}
+        <div className="inline-flex items-center gap-2">
+          {availableRoles.length > 0 && (
+            <Select onValueChange={(v) => onAddRole(v as AppRole)}>
+              <SelectTrigger className="w-[180px] inline-flex">
+                <SelectValue placeholder="+ Ajouter un rôle" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableRoles.map((r) => {
+                  const meta = ROLE_META[r];
+                  return (
+                    <SelectItem key={r} value={r}>
+                      {meta.label}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive hover:text-destructive"
+            onClick={onRemoveAll}
+            title="Retirer du personnel"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
   );

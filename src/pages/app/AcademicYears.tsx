@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Calendar as CalendarIcon, CheckCircle2, Archive } from "lucide-react";
+import { Loader2, Plus, Calendar as CalendarIcon, CheckCircle2, Archive, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -24,6 +24,14 @@ export default function AcademicYears() {
   const { data: years, isLoading } = useAcademicYears(school?.id);
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
+
+  const remove = async (id: string, name: string) => {
+    if (!confirm(`Supprimer définitivement l'année « ${name} » ?\nCela ne fonctionnera pas si des classes ou inscriptions y sont attachées.`)) return;
+    const { error } = await supabase.from("academic_years").delete().eq("id", id);
+    if (error) toast.error("Erreur", { description: error.message });
+    else { toast.success("Supprimé"); qc.invalidateQueries({ queryKey: ["academic-years"] }); }
+  };
 
   const setActive = async (id: string) => {
     if (!school) return;
@@ -111,21 +119,46 @@ export default function AcademicYears() {
                   {format(new Date(y.end_date), "PPP", { locale: fr })}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {!y.is_active && !y.is_archived && (
                   <Button variant="outline" size="sm" onClick={() => setActive(y.id)}>
                     Activer
                   </Button>
                 )}
+                <Button variant="ghost" size="icon" onClick={() => setEditing(y)} title="Modifier">
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 {!y.is_archived && (
-                  <Button variant="ghost" size="sm" onClick={() => archive(y.id)}>
+                  <Button variant="ghost" size="icon" onClick={() => archive(y.id)} title="Archiver">
                     <Archive className="h-4 w-4" />
                   </Button>
                 )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => remove(y.id, y.name)}
+                  title="Supprimer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {editing && (
+        <Dialog open onOpenChange={(o) => !o && setEditing(null)}>
+          <EditYearDialog
+            year={editing}
+            onSaved={() => {
+              setEditing(null);
+              qc.invalidateQueries({ queryKey: ["academic-years"] });
+              qc.invalidateQueries({ queryKey: ["active-year"] });
+            }}
+          />
+        </Dialog>
       )}
     </div>
   );
@@ -197,6 +230,52 @@ function NewYearDialog({
         <Button onClick={submit} disabled={loading} className="gap-2">
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           Créer
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
+
+function EditYearDialog({ year, onSaved }: { year: any; onSaved: () => void }) {
+  const [name, setName] = useState(year.name);
+  const [start, setStart] = useState(year.start_date);
+  const [end, setEnd] = useState(year.end_date);
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    setLoading(true);
+    const { error } = await supabase
+      .from("academic_years")
+      .update({ name, start_date: start, end_date: end })
+      .eq("id", year.id);
+    setLoading(false);
+    if (error) toast.error("Erreur", { description: error.message });
+    else { toast.success("Année mise à jour"); onSaved(); }
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader><DialogTitle>Modifier l'année scolaire</DialogTitle></DialogHeader>
+      <div className="space-y-4 py-2">
+        <div className="space-y-2">
+          <Label>Nom</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label>Début</Label>
+            <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Fin</Label>
+            <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+          </div>
+        </div>
+      </div>
+      <DialogFooter>
+        <Button onClick={submit} disabled={loading} className="gap-2">
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          Enregistrer
         </Button>
       </DialogFooter>
     </DialogContent>
