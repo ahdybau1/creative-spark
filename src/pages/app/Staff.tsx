@@ -106,6 +106,22 @@ export default function Staff() {
     onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
   });
 
+  const removeAllRolesMutation = useMutation({
+    mutationFn: async (user_id: string) => {
+      const { error } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", user_id)
+        .eq("school_id", school!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["staff", school?.id] });
+      toast({ title: "Membre retiré du personnel" });
+    },
+    onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+  });
+
   if (schoolLoading) {
     return <div className="p-8 flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Chargement…</div>;
   }
