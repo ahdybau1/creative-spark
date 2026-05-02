@@ -1,23 +1,15 @@
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 
-/** Output mode for generated PDFs */
+/* ============================================================
+   Documents PDF — style "Moderne épuré (corporate)"
+   - Carte d'élève au format CR80 (85.6 × 54 mm), 2 pages recto/verso
+   - Certificats A4 avec en-tête couleur, sections sobres, QR de vérif
+   ============================================================ */
+
 export type PdfOutput = "download" | "print";
 
-/** Save or open+print depending on mode */
-function emit(doc: jsPDF, filename: string, mode: PdfOutput) {
-  if (mode === "print") {
-    const blobUrl = doc.output("bloburl") as unknown as string;
-    const win = window.open(blobUrl, "_blank");
-    if (win) {
-      win.addEventListener("load", () => {
-        try { win.focus(); win.print(); } catch { /* ignore */ }
-      });
-    }
-  } else {
-    doc.save(filename);
-  }
-}
+/* ---------- Types ---------- */
 
 export interface SchoolPdfInfo {
   name: string;
@@ -43,6 +35,10 @@ export interface StudentPdfInfo {
   nationality?: string | null;
   photo_url?: string | null;
   blood_type?: string | null;
+  allergies?: string | null;
+  address?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
 }
 
 export interface ClassPdfInfo {
@@ -51,19 +47,32 @@ export interface ClassPdfInfo {
   academic_year?: string | null;
 }
 
-/* ---------- Utils ---------- */
+/* ---------- Helpers ---------- */
+
+function emit(doc: jsPDF, filename: string, mode: PdfOutput) {
+  if (mode === "print") {
+    const blobUrl = doc.output("bloburl") as unknown as string;
+    const win = window.open(blobUrl, "_blank");
+    if (win) {
+      win.addEventListener("load", () => {
+        try { win.focus(); win.print(); } catch { /* ignore */ }
+      });
+    }
+  } else {
+    doc.save(filename);
+  }
+}
 
 function hslToRgb(hsl?: string | null): [number, number, number] {
-  if (!hsl) return [37, 99, 235]; // default blue
+  if (!hsl) return [37, 99, 235];
   const m = hsl.match(/(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%/);
   if (!m) return [37, 99, 235];
-  let h = parseFloat(m[1]) / 360;
-  let s = parseFloat(m[2]) / 100;
-  let l = parseFloat(m[3]) / 100;
+  const h = parseFloat(m[1]) / 360;
+  const s = parseFloat(m[2]) / 100;
+  const l = parseFloat(m[3]) / 100;
   let r: number, g: number, b: number;
-  if (s === 0) {
-    r = g = b = l;
-  } else {
+  if (s === 0) { r = g = b = l; }
+  else {
     const hue2rgb = (p: number, q: number, t: number) => {
       if (t < 0) t += 1;
       if (t > 1) t -= 1;
@@ -81,6 +90,14 @@ function hslToRgb(hsl?: string | null): [number, number, number] {
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
 
+function lighten([r, g, b]: [number, number, number], amount = 0.85): [number, number, number] {
+  return [
+    Math.round(r + (255 - r) * amount),
+    Math.round(g + (255 - g) * amount),
+    Math.round(b + (255 - b) * amount),
+  ];
+}
+
 async function loadImageDataUrl(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, { mode: "cors" });
@@ -92,91 +109,338 @@ async function loadImageDataUrl(url: string): Promise<string | null> {
       r.onerror = () => resolve(null);
       r.readAsDataURL(blob);
     });
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 function fmtDate(s?: string | null) {
   if (!s) return "—";
   try {
     return new Date(s).toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
+      day: "2-digit", month: "long", year: "numeric",
     });
-  } catch {
-    return s;
-  }
+  } catch { return s; }
 }
 
 function fullName(s: StudentPdfInfo) {
   return [s.first_name, s.middle_name, s.last_name].filter(Boolean).join(" ");
 }
 
-/* ---------- Header partagé ---------- */
+function bloodLabel(bt?: string | null) {
+  if (!bt || bt === "unknown") return null;
+  return bt.replace("_pos", "+").replace("_neg", "-").toUpperCase();
+}
 
-async function drawHeader(
+/* ============================================================
+   A4 — En-tête / pied corporate
+   ============================================================ */
+
+async function drawA4Header(
   doc: jsPDF,
   school: SchoolPdfInfo,
+  eyebrow: string,
   title: string
 ): Promise<number> {
   const [r, g, b] = hslToRgb(school.primary_color);
   const pageW = doc.internal.pageSize.getWidth();
 
-  // Bandeau couleur
+  // Bande couleur fine en haut
   doc.setFillColor(r, g, b);
-  doc.rect(0, 0, pageW, 32, "F");
+  doc.rect(0, 0, pageW, 6, "F");
 
-  // Logo
+  // Zone identité école (sobre, noir sur blanc)
+  let cursorX = 20;
   if (school.logo_url) {
     const logo = await loadImageDataUrl(school.logo_url);
     if (logo) {
       try {
-        doc.addImage(logo, "PNG", 12, 6, 20, 20);
-      } catch {
-        /* ignore */
-      }
+        doc.addImage(logo, "PNG", 20, 14, 18, 18);
+        cursorX = 44;
+      } catch { /* ignore */ }
     }
   }
 
-  // Nom école
-  doc.setTextColor(255, 255, 255);
+  doc.setTextColor(20, 20, 20);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text(school.name.toUpperCase(), 38, 14);
+  doc.setFontSize(13);
+  doc.text(school.name.toUpperCase(), cursorX, 20);
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  if (school.motto) doc.text(school.motto, 38, 20);
-  const meta = [school.address, school.phone, school.email].filter(Boolean).join(" · ");
-  if (meta) doc.text(meta, 38, 25);
+  doc.setFontSize(8);
+  doc.setTextColor(110, 110, 110);
+  if (school.motto) doc.text(school.motto, cursorX, 25);
+  const meta = [school.address, school.phone, school.email]
+    .filter(Boolean).join("  ·  ");
+  if (meta) {
+    const wrapped = doc.splitTextToSize(meta, pageW - cursorX - 20);
+    doc.text(wrapped, cursorX, school.motto ? 29 : 25);
+  }
 
-  // Titre du document
-  doc.setTextColor(0, 0, 0);
+  // Bloc titre
+  const titleY = 50;
+  doc.setTextColor(r, g, b);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text(title.toUpperCase(), pageW / 2, 44, { align: "center" });
+  doc.setFontSize(8);
+  doc.text(eyebrow.toUpperCase(), 20, titleY, { charSpace: 1.5 });
 
-  // Trait
-  doc.setDrawColor(r, g, b);
-  doc.setLineWidth(0.5);
-  doc.line(20, 48, pageW - 20, 48);
+  doc.setTextColor(15, 15, 15);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.text(title, 20, titleY + 9);
 
-  return 56; // y de départ du contenu
+  // Trait de séparation
+  doc.setDrawColor(230, 230, 230);
+  doc.setLineWidth(0.3);
+  doc.line(20, titleY + 14, pageW - 20, titleY + 14);
+
+  return titleY + 24;
 }
 
-function drawFooter(doc: jsPDF, school: SchoolPdfInfo) {
+function drawA4Footer(doc: jsPDF, school: SchoolPdfInfo, ref?: string) {
   const pageH = doc.internal.pageSize.getHeight();
   const pageW = doc.internal.pageSize.getWidth();
-  doc.setFontSize(8);
-  doc.setTextColor(120);
+  const [r, g, b] = hslToRgb(school.primary_color);
+
+  // Trait fin
+  doc.setDrawColor(230, 230, 230);
+  doc.setLineWidth(0.3);
+  doc.line(20, pageH - 18, pageW - 20, pageH - 18);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(140, 140, 140);
   const date = new Date().toLocaleString("fr-FR");
-  doc.text(`Édité le ${date}`, 20, pageH - 10);
-  doc.text(school.website || "", pageW - 20, pageH - 10, { align: "right" });
+  const left = ref ? `Réf. ${ref}  ·  Édité le ${date}` : `Édité le ${date}`;
+  doc.text(left, 20, pageH - 12);
+
+  const right = school.website || school.email || "";
+  if (right) doc.text(right, pageW - 20, pageH - 12, { align: "right" });
+
+  // Petit point couleur côté gauche pour signature visuelle
+  doc.setFillColor(r, g, b);
+  doc.circle(15, pageH - 13, 1.2, "F");
 }
 
-/* ---------- 1. Carte scolaire ---------- */
+/** Bloc info clé/valeur sur 2 colonnes */
+function drawInfoGrid(
+  doc: jsPDF,
+  rows: Array<[string, string]>,
+  x: number,
+  y: number,
+  width: number,
+  colorRGB: [number, number, number]
+): number {
+  const [r, g, b] = colorRGB;
+  const colW = width / 2;
+  const rowH = 12;
+
+  rows.forEach((row, i) => {
+    const col = i % 2;
+    const lineIdx = Math.floor(i / 2);
+    const cx = x + col * colW;
+    const cy = y + lineIdx * rowH;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(r, g, b);
+    doc.text(row[0].toUpperCase(), cx, cy, { charSpace: 0.8 });
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(25, 25, 25);
+    const value = row[1] || "—";
+    doc.text(value, cx, cy + 5);
+  });
+
+  const rowsCount = Math.ceil(rows.length / 2);
+  return y + rowsCount * rowH;
+}
+
+/* ============================================================
+   1. CARTE D'ÉLÈVE — CR80 recto / verso (2 pages)
+   ============================================================ */
+
+const CARD_W = 85.6;
+const CARD_H = 54;
+
+async function drawCardRecto(
+  doc: jsPDF,
+  student: StudentPdfInfo,
+  school: SchoolPdfInfo,
+  klass?: ClassPdfInfo
+) {
+  const [r, g, b] = hslToRgb(school.primary_color);
+
+  // Fond
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, CARD_W, CARD_H, "F");
+
+  // Bandeau gauche couleur (vertical, accent corporate)
+  doc.setFillColor(r, g, b);
+  doc.rect(0, 0, 4, CARD_H, "F");
+
+  // Bandeau haut clair (zone identité école)
+  const [lr, lg, lb] = lighten([r, g, b], 0.92);
+  doc.setFillColor(lr, lg, lb);
+  doc.rect(4, 0, CARD_W - 4, 11, "F");
+
+  // Logo + nom école
+  let textX = 7;
+  if (school.logo_url) {
+    const logo = await loadImageDataUrl(school.logo_url);
+    if (logo) {
+      try { doc.addImage(logo, "PNG", 6, 1.5, 8, 8); textX = 16; } catch { /* */ }
+    }
+  }
+  doc.setTextColor(r, g, b);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.text(school.name.toUpperCase().slice(0, 38), textX, 5);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(5.5);
+  doc.setTextColor(110, 110, 110);
+  doc.text("CARTE D'ÉLÈVE", textX, 8.5);
+
+  // Photo (cadre arrondi simulé par bordure)
+  const photoX = 7, photoY = 14, photoW = 22, photoH = 28;
+  if (student.photo_url) {
+    const photo = await loadImageDataUrl(student.photo_url);
+    if (photo) {
+      try { doc.addImage(photo, "JPEG", photoX, photoY, photoW, photoH); } catch { /* */ }
+    } else {
+      doc.setFillColor(245, 245, 245);
+      doc.rect(photoX, photoY, photoW, photoH, "F");
+    }
+  } else {
+    doc.setFillColor(245, 245, 245);
+    doc.rect(photoX, photoY, photoW, photoH, "F");
+  }
+  // Liseré couleur sous la photo
+  doc.setFillColor(r, g, b);
+  doc.rect(photoX, photoY + photoH, photoW, 0.8, "F");
+
+  // Bloc identité (droite)
+  const infoX = 33;
+  doc.setTextColor(r, g, b);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(5.5);
+  doc.text("ÉLÈVE", infoX, 16, { charSpace: 0.6 });
+
+  doc.setTextColor(20, 20, 20);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  const nameLines = doc.splitTextToSize(fullName(student).toUpperCase(), CARD_W - infoX - 4);
+  doc.text(nameLines.slice(0, 2), infoX, 20);
+
+  // Mini grille infos
+  const miniRow = (label: string, value: string, y: number) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(5);
+    doc.setTextColor(140, 140, 140);
+    doc.text(label.toUpperCase(), infoX, y, { charSpace: 0.5 });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(30, 30, 30);
+    doc.text(value, infoX, y + 3);
+  };
+
+  let yy = 28;
+  miniRow("Matricule", student.matricule, yy); yy += 7;
+  miniRow("Né(e) le", fmtDate(student.date_of_birth), yy); yy += 7;
+  if (klass?.name) { miniRow("Classe", `${klass.name}${klass.academic_year ? "  ·  " + klass.academic_year : ""}`, yy); }
+
+  // Bandeau bas couleur avec mention
+  doc.setFillColor(r, g, b);
+  doc.rect(4, CARD_H - 5, CARD_W - 4, 5, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(5);
+  doc.text("CARTE OFFICIELLE  ·  NON CESSIBLE", 7, CARD_H - 1.8, { charSpace: 0.5 });
+  if (klass?.academic_year) {
+    doc.text(`ANNÉE ${klass.academic_year}`, CARD_W - 6, CARD_H - 1.8, { align: "right", charSpace: 0.5 });
+  }
+}
+
+async function drawCardVerso(
+  doc: jsPDF,
+  student: StudentPdfInfo,
+  school: SchoolPdfInfo
+) {
+  const [r, g, b] = hslToRgb(school.primary_color);
+
+  // Fond
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, CARD_W, CARD_H, "F");
+
+  // Bandeau haut très fin
+  doc.setFillColor(r, g, b);
+  doc.rect(0, 0, CARD_W, 3, "F");
+
+  // QR code (gauche)
+  const qrSize = 26;
+  const qrX = 6, qrY = 8;
+  try {
+    const qr = await QRCode.toDataURL(
+      `https://verify.school/${student.id}|mat:${student.matricule}`,
+      { margin: 0, width: 240 }
+    );
+    doc.addImage(qr, "PNG", qrX, qrY, qrSize, qrSize);
+  } catch { /* */ }
+
+  doc.setTextColor(120, 120, 120);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(4.5);
+  doc.text("SCANNER POUR VÉRIFIER", qrX + qrSize / 2, qrY + qrSize + 2.5, { align: "center", charSpace: 0.5 });
+
+  // Bloc infos (droite)
+  const ix = 38;
+
+  doc.setTextColor(r, g, b);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(6);
+  doc.text("EN CAS D'URGENCE", ix, 8, { charSpace: 0.8 });
+
+  const verRow = (label: string, value: string | null | undefined, y: number) => {
+    if (!value) return false;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(4.8);
+    doc.setTextColor(140, 140, 140);
+    doc.text(label.toUpperCase(), ix, y, { charSpace: 0.4 });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.setTextColor(25, 25, 25);
+    const lines = doc.splitTextToSize(value, CARD_W - ix - 4);
+    doc.text(lines.slice(0, 2), ix, y + 2.8);
+    return true;
+  };
+
+  let yy = 13;
+  if (verRow("Contact", student.emergency_contact_name, yy)) yy += 8;
+  if (verRow("Téléphone", student.emergency_contact_phone, yy)) yy += 8;
+  const bt = bloodLabel(student.blood_type);
+  if (bt) { verRow("Sang", bt, yy); }
+  if (student.allergies) {
+    // Allergies en bas, pleine largeur
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(4.8);
+    doc.setTextColor(140, 140, 140);
+    doc.text("ALLERGIES", 6, 40, { charSpace: 0.4 });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6);
+    doc.setTextColor(180, 30, 30);
+    const lines = doc.splitTextToSize(student.allergies, CARD_W - 12);
+    doc.text(lines.slice(0, 2), 6, 43);
+  }
+
+  // Bandeau bas : adresse école
+  doc.setFillColor(245, 245, 245);
+  doc.rect(0, CARD_H - 7, CARD_W, 7, "F");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(4.5);
+  doc.setTextColor(110, 110, 110);
+  const ret = `En cas de perte, retourner à : ${school.name}${school.address ? " — " + school.address : ""}`;
+  const retLines = doc.splitTextToSize(ret, CARD_W - 6);
+  doc.text(retLines.slice(0, 2), 3, CARD_H - 4);
+}
 
 export async function generateStudentIDCard(
   student: StudentPdfInfo,
@@ -184,80 +448,16 @@ export async function generateStudentIDCard(
   klass?: ClassPdfInfo,
   output: PdfOutput = "download"
 ) {
-  // Carte format paysage CR80 agrandie (85.6 x 54 mm) sur A6
-  const doc = new jsPDF({ unit: "mm", format: [90, 56], orientation: "landscape" });
-  const [r, g, b] = hslToRgb(school.primary_color);
-
-  // Fond
-  doc.setFillColor(250, 250, 250);
-  doc.rect(0, 0, 90, 56, "F");
-
-  // Bandeau
-  doc.setFillColor(r, g, b);
-  doc.rect(0, 0, 90, 12, "F");
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.text(school.name.toUpperCase().slice(0, 40), 4, 5);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6);
-  doc.text("CARTE D'ÉLÈVE", 4, 9);
-
-  // Photo
-  if (student.photo_url) {
-    const photo = await loadImageDataUrl(student.photo_url);
-    if (photo) {
-      try {
-        doc.addImage(photo, "JPEG", 4, 16, 22, 28);
-      } catch {
-        /* ignore */
-      }
-    }
-  } else {
-    doc.setDrawColor(200);
-    doc.rect(4, 16, 22, 28);
-  }
-
-  // Infos
-  doc.setTextColor(20, 20, 20);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text(fullName(student), 30, 20);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.text(`Matricule : ${student.matricule}`, 30, 26);
-  doc.text(`Né(e) le : ${fmtDate(student.date_of_birth)}`, 30, 30);
-  if (klass?.name) doc.text(`Classe : ${klass.name}`, 30, 34);
-  if (klass?.academic_year) doc.text(`Année : ${klass.academic_year}`, 30, 38);
-  if (student.blood_type && student.blood_type !== "unknown") {
-    const bt = student.blood_type
-      .replace("_pos", "+")
-      .replace("_neg", "-")
-      .toUpperCase();
-    doc.text(`Sang : ${bt}`, 30, 42);
-  }
-
-  // QR code
-  try {
-    const qr = await QRCode.toDataURL(`student:${student.id}|mat:${student.matricule}`, {
-      margin: 0,
-      width: 200,
-    });
-    doc.addImage(qr, "PNG", 70, 32, 16, 16);
-  } catch {
-    /* ignore */
-  }
-
-  // Bandeau bas
-  doc.setFillColor(r, g, b);
-  doc.rect(0, 52, 90, 4, "F");
-
+  const doc = new jsPDF({ unit: "mm", format: [CARD_W, CARD_H], orientation: "landscape" });
+  await drawCardRecto(doc, student, school, klass);
+  doc.addPage([CARD_W, CARD_H], "landscape");
+  await drawCardVerso(doc, student, school);
   emit(doc, `carte-${student.matricule}.pdf`, output);
 }
 
-/* ---------- 2. Certificat de scolarité ---------- */
+/* ============================================================
+   2. CERTIFICAT DE SCOLARITÉ
+   ============================================================ */
 
 export async function generateEnrollmentCertificate(
   student: StudentPdfInfo,
@@ -266,70 +466,99 @@ export async function generateEnrollmentCertificate(
   output: PdfOutput = "download"
 ) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  let y = await drawHeader(doc, school, "Certificat de scolarité");
-
+  const [r, g, b] = hslToRgb(school.primary_color);
   const pageW = doc.internal.pageSize.getWidth();
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(20);
 
   const ref = `CS-${new Date().getFullYear()}-${student.matricule}`;
-  doc.text(`Référence : ${ref}`, pageW - 20, y, { align: "right" });
-  y += 14;
+  let y = await drawA4Header(doc, school, "Document officiel", "Certificat de scolarité");
 
-  doc.text("Le Directeur de l'établissement soussigné certifie que :", 20, y);
-  y += 12;
+  // Carte info élève (panneau clair)
+  const [lr, lg, lb] = lighten([r, g, b], 0.94);
+  doc.setFillColor(lr, lg, lb);
+  doc.roundedRect(20, y, pageW - 40, 56, 2, 2, "F");
 
+  // Nom + matricule en tête du panneau
+  doc.setTextColor(r, g, b);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text(fullName(student).toUpperCase(), pageW / 2, y, { align: "center" });
-  y += 8;
+  doc.setFontSize(7);
+  doc.text("ÉLÈVE", 26, y + 8, { charSpace: 1 });
 
+  doc.setTextColor(15, 15, 15);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+  doc.text(fullName(student).toUpperCase(), 26, y + 16);
+
+  // Grille info
+  drawInfoGrid(doc, [
+    ["Matricule", student.matricule],
+    ["Date de naissance", fmtDate(student.date_of_birth)],
+    ["Lieu de naissance", student.place_of_birth || "—"],
+    ["Sexe", student.gender === "male" ? "Masculin" : student.gender === "female" ? "Féminin" : "Autre"],
+    ["Nationalité", student.nationality || "—"],
+    ["Année scolaire", klass.academic_year || "—"],
+  ], 26, y + 24, pageW - 52, [r, g, b]);
+
+  y += 66;
+
+  // Corps du certificat
+  doc.setTextColor(40, 40, 40);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
-  const lines = [
-    `Matricule : ${student.matricule}`,
-    `Né(e) le : ${fmtDate(student.date_of_birth)}${student.place_of_birth ? " à " + student.place_of_birth : ""}`,
-    `Sexe : ${student.gender === "male" ? "Masculin" : student.gender === "female" ? "Féminin" : "Autre"}`,
-    student.nationality ? `Nationalité : ${student.nationality}` : "",
-  ].filter(Boolean);
-  lines.forEach((l) => {
-    doc.text(l, pageW / 2, y, { align: "center" });
-    y += 6;
-  });
+  const klassLabel = [klass.level_name, klass.name].filter(Boolean).join(" / ") || "—";
+  const body = `Le Directeur de l'établissement soussigné certifie que l'élève désigné(e) ci-dessus est régulièrement inscrit(e) en classe de ${klassLabel} au titre de l'année scolaire ${klass.academic_year ?? "—"}.`;
+  const bodyLines = doc.splitTextToSize(body, pageW - 40);
+  doc.text(bodyLines, 20, y);
+  y += bodyLines.length * 6 + 8;
 
-  y += 10;
-  const klassLabel =
-    [klass.level_name, klass.name].filter(Boolean).join(" / ") || "—";
-  const txt = `est régulièrement inscrit(e) en classe de ${klassLabel} au titre de l'année scolaire ${klass.academic_year ?? "—"} dans notre établissement.`;
-  const wrapped = doc.splitTextToSize(txt, pageW - 40);
-  doc.text(wrapped, 20, y);
-  y += wrapped.length * 6 + 10;
-
-  doc.text(
-    "En foi de quoi, le présent certificat lui est délivré pour servir et valoir ce que de droit.",
-    20,
-    y,
-    { maxWidth: pageW - 40 }
-  );
-  y += 24;
-
-  // Lieu / date / signature
-  const today = new Date().toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-  doc.text(`Fait à ${school.address?.split(",").pop()?.trim() ?? "—"}, le ${today}`, pageW - 20, y, { align: "right" });
-  y += 30;
   doc.setFont("helvetica", "italic");
-  doc.text("Signature et cachet", pageW - 20, y, { align: "right" });
+  doc.setTextColor(90, 90, 90);
+  const note = "En foi de quoi, le présent certificat lui est délivré pour servir et valoir ce que de droit.";
+  const noteLines = doc.splitTextToSize(note, pageW - 40);
+  doc.text(noteLines, 20, y);
+  y += noteLines.length * 6 + 20;
 
-  drawFooter(doc, school);
+  // Zone signature
+  const sigX = pageW - 80;
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.3);
+  doc.line(sigX, y + 18, sigX + 60, y + 18);
+
+  const today = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  const place = school.address?.split(",").pop()?.trim() ?? "—";
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(90, 90, 90);
+  doc.text(`Fait à ${place}, le ${today}`, sigX, y + 8);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(25, 25, 25);
+  doc.text("Signature et cachet", sigX, y + 24);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(140, 140, 140);
+  doc.text("La Direction", sigX, y + 28);
+
+  // QR de vérification (bas gauche)
+  try {
+    const qr = await QRCode.toDataURL(
+      `https://verify.school/cert/${ref}`,
+      { margin: 0, width: 200 }
+    );
+    doc.addImage(qr, "PNG", 20, y + 4, 22, 22);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(140, 140, 140);
+    doc.text("Vérifier l'authenticité", 20, y + 30);
+  } catch { /* */ }
+
+  drawA4Footer(doc, school, ref);
   emit(doc, `certificat-scolarite-${student.matricule}.pdf`, output);
 }
 
-/* ---------- 3. Certificat de transfert / radiation ---------- */
+/* ============================================================
+   3. CERTIFICAT DE TRANSFERT / RADIATION
+   ============================================================ */
 
 export async function generateTransferCertificate(opts: {
   student: StudentPdfInfo;
@@ -346,82 +575,122 @@ export async function generateTransferCertificate(opts: {
   const output = opts.output ?? "download";
   const { student, school, type, reason, effective_date, destination_school, certificate_number, last_class, academic_year } = opts;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const title = type === "outgoing" ? "Certificat de transfert" : "Certificat de radiation";
-  let y = await drawHeader(doc, school, title);
+  const [r, g, b] = hslToRgb(school.primary_color);
   const pageW = doc.internal.pageSize.getWidth();
 
+  const title = type === "outgoing" ? "Certificat de transfert" : "Certificat de radiation";
+  const eyebrow = type === "outgoing" ? "Sortie · Transfert" : "Sortie · Radiation";
+  const ref = certificate_number ?? `${type === "outgoing" ? "CT" : "CR"}-${new Date().getFullYear()}-${student.matricule}`;
+
+  let y = await drawA4Header(doc, school, eyebrow, title);
+
+  // Panneau élève
+  const [lr, lg, lb] = lighten([r, g, b], 0.94);
+  doc.setFillColor(lr, lg, lb);
+  doc.roundedRect(20, y, pageW - 40, 44, 2, 2, "F");
+
+  doc.setTextColor(r, g, b);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.text("ÉLÈVE CONCERNÉ(E)", 26, y + 8, { charSpace: 1 });
+
+  doc.setTextColor(15, 15, 15);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+  doc.text(fullName(student).toUpperCase(), 26, y + 16);
+
+  drawInfoGrid(doc, [
+    ["Matricule", student.matricule],
+    ["Date de naissance", fmtDate(student.date_of_birth)],
+    ["Dernière classe", last_class || "—"],
+    ["Année scolaire", academic_year || "—"],
+  ], 26, y + 24, pageW - 52, [r, g, b]);
+
+  y += 54;
+
+  // Corps
+  doc.setTextColor(40, 40, 40);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
-  doc.setTextColor(20);
 
-  if (certificate_number) {
-    doc.text(`N° ${certificate_number}`, pageW - 20, y, { align: "right" });
-    y += 12;
-  }
-
-  doc.text("Le Directeur de l'établissement soussigné atteste que :", 20, y);
-  y += 12;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text(fullName(student).toUpperCase(), pageW / 2, y, { align: "center" });
+  const intro = "Le Directeur de l'établissement soussigné atteste que l'élève désigné(e) ci-dessus :";
+  doc.text(intro, 20, y);
   y += 8;
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.text(`Matricule : ${student.matricule}`, pageW / 2, y, { align: "center" });
-  y += 6;
-  doc.text(`Né(e) le : ${fmtDate(student.date_of_birth)}`, pageW / 2, y, { align: "center" });
-  y += 12;
-
-  let body = "";
+  let body: string;
   if (type === "outgoing") {
-    body = `a été ${last_class ? `inscrit(e) en classe de ${last_class} ` : ""}dans notre établissement${
-      academic_year ? ` au titre de l'année scolaire ${academic_year}` : ""
-    }, et est autorisé(e) à être transféré(e)${
-      destination_school ? ` vers : ${destination_school}` : ""
-    }, à compter du ${fmtDate(effective_date)}.`;
+    body = `est autorisé(e) à être transféré(e)${destination_school ? ` vers l'établissement : ${destination_school}` : ""}, à compter du ${fmtDate(effective_date)}.`;
   } else {
-    body = `a été radié(e) de notre établissement à compter du ${fmtDate(effective_date)}${
-      last_class ? `, alors qu'il/elle était inscrit(e) en classe de ${last_class}` : ""
-    }${academic_year ? ` (année scolaire ${academic_year})` : ""}.`;
+    body = `a été radié(e) de notre établissement à compter du ${fmtDate(effective_date)}.`;
   }
+  const bodyLines = doc.splitTextToSize(body, pageW - 40);
+  doc.text(bodyLines, 20, y);
+  y += bodyLines.length * 6 + 8;
 
-  const wrapped = doc.splitTextToSize(body, pageW - 40);
-  doc.text(wrapped, 20, y);
-  y += wrapped.length * 6 + 8;
+  // Bloc motif (panneau distinct)
+  doc.setDrawColor(230, 230, 230);
+  doc.setFillColor(252, 252, 252);
+  const motifH = Math.max(22, doc.splitTextToSize(reason, pageW - 52).length * 6 + 14);
+  doc.roundedRect(20, y, pageW - 40, motifH, 2, 2, "FD");
 
+  doc.setTextColor(r, g, b);
   doc.setFont("helvetica", "bold");
-  doc.text("Motif :", 20, y);
+  doc.setFontSize(7);
+  doc.text("MOTIF", 26, y + 7, { charSpace: 1 });
+  doc.setTextColor(40, 40, 40);
   doc.setFont("helvetica", "normal");
-  const rWrap = doc.splitTextToSize(reason, pageW - 40);
-  doc.text(rWrap, 20, y + 6);
-  y += rWrap.length * 6 + 16;
+  doc.setFontSize(10);
+  const reasonLines = doc.splitTextToSize(reason, pageW - 52);
+  doc.text(reasonLines, 26, y + 13);
+  y += motifH + 10;
 
-  doc.text(
-    "Le présent certificat est délivré à l'intéressé(e) pour servir et valoir ce que de droit.",
-    20,
-    y,
-    { maxWidth: pageW - 40 }
-  );
-  y += 20;
-
-  const today = new Date().toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-  doc.text(`Fait le ${today}`, pageW - 20, y, { align: "right" });
-  y += 28;
   doc.setFont("helvetica", "italic");
-  doc.text("Signature et cachet", pageW - 20, y, { align: "right" });
+  doc.setTextColor(90, 90, 90);
+  doc.setFontSize(10);
+  const note = "Le présent certificat est délivré à l'intéressé(e) pour servir et valoir ce que de droit.";
+  const noteLines = doc.splitTextToSize(note, pageW - 40);
+  doc.text(noteLines, 20, y);
+  y += noteLines.length * 6 + 16;
 
-  drawFooter(doc, school);
+  // Signature
+  const sigX = pageW - 80;
+  doc.setDrawColor(220, 220, 220);
+  doc.line(sigX, y + 18, sigX + 60, y + 18);
+  const today = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(90, 90, 90);
+  doc.text(`Fait le ${today}`, sigX, y + 8);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(25, 25, 25);
+  doc.text("Signature et cachet", sigX, y + 24);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(140, 140, 140);
+  doc.text("La Direction", sigX, y + 28);
+
+  // QR vérification
+  try {
+    const qr = await QRCode.toDataURL(
+      `https://verify.school/cert/${ref}`,
+      { margin: 0, width: 200 }
+    );
+    doc.addImage(qr, "PNG", 20, y + 4, 22, 22);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(140, 140, 140);
+    doc.text("Vérifier l'authenticité", 20, y + 30);
+  } catch { /* */ }
+
+  drawA4Footer(doc, school, ref);
   const fileBase = type === "outgoing" ? "transfert" : "radiation";
   emit(doc, `${fileBase}-${student.matricule}.pdf`, output);
 }
 
-/* ---------- 4. PACK COMPLET (carte + scolarité + dernier transfert) ---------- */
+/* ============================================================
+   4. PACK COMPLET — Carte (recto/verso) + Scolarité + Transfert
+   ============================================================ */
 
 export async function generateAllStudentDocuments(opts: {
   student: StudentPdfInfo;
@@ -438,134 +707,115 @@ export async function generateAllStudentDocuments(opts: {
 }) {
   const { student, school, klass, lastTransfer, output = "print" } = opts;
 
-  // On délègue : génère chaque doc en blob, puis on fusionne via jsPDF en plusieurs pages
-  // Approche pragmatique : générer un doc A4 multi-pages reprenant les visuels des certificats,
-  // et insérer la carte sur sa propre page A4.
+  // Page 1 : carte recto (CR80)
+  const doc = new jsPDF({ unit: "mm", format: [CARD_W, CARD_H], orientation: "landscape" });
+  await drawCardRecto(doc, student, school, klass);
 
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
+  // Page 2 : carte verso (CR80)
+  doc.addPage([CARD_W, CARD_H], "landscape");
+  await drawCardVerso(doc, student, school);
+
+  /* ----- Pages A4 : certificat de scolarité ----- */
+  doc.addPage("a4", "portrait");
   const [r, g, b] = hslToRgb(school.primary_color);
+  const pageW = doc.internal.pageSize.getWidth();
 
-  // ---- PAGE 1 : Carte d'élève centrée sur A4 ----
-  await drawHeader(doc, school, "Carte d'élève");
-  // Cadre de carte au centre
-  const cardW = 90, cardH = 56;
-  const cx = (pageW - cardW) / 2;
-  const cy = 70;
+  let y = await drawA4Header(doc, school, "Document officiel", "Certificat de scolarité");
 
-  doc.setFillColor(250, 250, 250);
-  doc.rect(cx, cy, cardW, cardH, "F");
-  doc.setFillColor(r, g, b);
-  doc.rect(cx, cy, cardW, 12, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.text(school.name.toUpperCase().slice(0, 40), cx + 4, cy + 5);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6);
-  doc.text("CARTE D'ÉLÈVE", cx + 4, cy + 9);
+  const [lr, lg, lb] = lighten([r, g, b], 0.94);
+  doc.setFillColor(lr, lg, lb);
+  doc.roundedRect(20, y, pageW - 40, 56, 2, 2, "F");
+  doc.setTextColor(r, g, b);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(7);
+  doc.text("ÉLÈVE", 26, y + 8, { charSpace: 1 });
+  doc.setTextColor(15, 15, 15);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(15);
+  doc.text(fullName(student).toUpperCase(), 26, y + 16);
+  drawInfoGrid(doc, [
+    ["Matricule", student.matricule],
+    ["Date de naissance", fmtDate(student.date_of_birth)],
+    ["Lieu de naissance", student.place_of_birth || "—"],
+    ["Sexe", student.gender === "male" ? "Masculin" : student.gender === "female" ? "Féminin" : "Autre"],
+    ["Nationalité", student.nationality || "—"],
+    ["Année scolaire", klass.academic_year || "—"],
+  ], 26, y + 24, pageW - 52, [r, g, b]);
+  y += 66;
 
-  if (student.photo_url) {
-    const photo = await loadImageDataUrl(student.photo_url);
-    if (photo) {
-      try { doc.addImage(photo, "JPEG", cx + 4, cy + 16, 22, 28); } catch { /* */ }
-    }
-  } else {
-    doc.setDrawColor(200);
-    doc.rect(cx + 4, cy + 16, 22, 28);
-  }
-
-  doc.setTextColor(20);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text(fullName(student), cx + 30, cy + 20);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.text(`Matricule : ${student.matricule}`, cx + 30, cy + 26);
-  doc.text(`Né(e) le : ${fmtDate(student.date_of_birth)}`, cx + 30, cy + 30);
-  if (klass.name) doc.text(`Classe : ${klass.name}`, cx + 30, cy + 34);
-  if (klass.academic_year) doc.text(`Année : ${klass.academic_year}`, cx + 30, cy + 38);
-
-  try {
-    const qr = await QRCode.toDataURL(`student:${student.id}|mat:${student.matricule}`, { margin: 0, width: 200 });
-    doc.addImage(qr, "PNG", cx + 70, cy + 32, 16, 16);
-  } catch { /* */ }
-
-  doc.setFillColor(r, g, b);
-  doc.rect(cx, cy + 52, cardW, 4, "F");
-
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(9);
-  doc.setTextColor(120);
-  doc.text("À découper et plastifier au format CR80 (85,6 × 54 mm)", pageW / 2, cy + cardH + 12, { align: "center" });
-
-  drawFooter(doc, school);
-
-  // ---- PAGE 2 : Certificat de scolarité ----
-  doc.addPage();
-  let y = await drawHeader(doc, school, "Certificat de scolarité");
-  doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(20);
-  const ref = `CS-${new Date().getFullYear()}-${student.matricule}`;
-  doc.text(`Référence : ${ref}`, pageW - 20, y, { align: "right" });
-  y += 14;
-  doc.text("Le Directeur de l'établissement soussigné certifie que :", 20, y);
-  y += 12;
-  doc.setFont("helvetica", "bold"); doc.setFontSize(13);
-  doc.text(fullName(student).toUpperCase(), pageW / 2, y, { align: "center" });
-  y += 8;
+  doc.setTextColor(40, 40, 40);
   doc.setFont("helvetica", "normal"); doc.setFontSize(11);
-  const lines = [
-    `Matricule : ${student.matricule}`,
-    `Né(e) le : ${fmtDate(student.date_of_birth)}${student.place_of_birth ? " à " + student.place_of_birth : ""}`,
-    `Sexe : ${student.gender === "male" ? "Masculin" : student.gender === "female" ? "Féminin" : "Autre"}`,
-  ];
-  lines.forEach((l) => { doc.text(l, pageW / 2, y, { align: "center" }); y += 6; });
-  y += 8;
   const klassLabel = [klass.level_name, klass.name].filter(Boolean).join(" / ") || "—";
-  const txt = `est régulièrement inscrit(e) en classe de ${klassLabel} au titre de l'année scolaire ${klass.academic_year ?? "—"} dans notre établissement.`;
-  const wrapped = doc.splitTextToSize(txt, pageW - 40);
-  doc.text(wrapped, 20, y);
-  y += wrapped.length * 6 + 16;
-  const today = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
-  doc.text(`Fait le ${today}`, pageW - 20, y, { align: "right" });
-  y += 28;
-  doc.setFont("helvetica", "italic");
-  doc.text("Signature et cachet", pageW - 20, y, { align: "right" });
-  drawFooter(doc, school);
+  const body = `Le Directeur de l'établissement soussigné certifie que l'élève désigné(e) ci-dessus est régulièrement inscrit(e) en classe de ${klassLabel} au titre de l'année scolaire ${klass.academic_year ?? "—"}.`;
+  const bodyLines = doc.splitTextToSize(body, pageW - 40);
+  doc.text(bodyLines, 20, y);
+  y += bodyLines.length * 6 + 20;
 
-  // ---- PAGE 3 (optionnelle) : dernier transfert/radiation ----
+  const today = new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  const sigX = pageW - 80;
+  doc.setDrawColor(220, 220, 220);
+  doc.line(sigX, y + 18, sigX + 60, y + 18);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+  doc.setTextColor(90, 90, 90);
+  doc.text(`Fait le ${today}`, sigX, y + 8);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+  doc.setTextColor(25, 25, 25);
+  doc.text("Signature et cachet", sigX, y + 24);
+
+  drawA4Footer(doc, school, `CS-${new Date().getFullYear()}-${student.matricule}`);
+
+  /* ----- Page A4 (optionnelle) : transfert / radiation ----- */
   if (lastTransfer) {
-    doc.addPage();
+    doc.addPage("a4", "portrait");
     const title = lastTransfer.type === "outgoing" ? "Certificat de transfert" : "Certificat de radiation";
-    let y2 = await drawHeader(doc, school, title);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(20);
-    if (lastTransfer.certificate_number) {
-      doc.text(`N° ${lastTransfer.certificate_number}`, pageW - 20, y2, { align: "right" });
-      y2 += 12;
-    }
-    doc.text("Le Directeur de l'établissement soussigné atteste que :", 20, y2);
-    y2 += 12;
-    doc.setFont("helvetica", "bold"); doc.setFontSize(13);
-    doc.text(fullName(student).toUpperCase(), pageW / 2, y2, { align: "center" });
-    y2 += 12;
+    const eyebrow = lastTransfer.type === "outgoing" ? "Sortie · Transfert" : "Sortie · Radiation";
+    const ref = lastTransfer.certificate_number ?? `${lastTransfer.type === "outgoing" ? "CT" : "CR"}-${new Date().getFullYear()}-${student.matricule}`;
+    let y2 = await drawA4Header(doc, school, eyebrow, title);
+
+    doc.setFillColor(lr, lg, lb);
+    doc.roundedRect(20, y2, pageW - 40, 36, 2, 2, "F");
+    doc.setTextColor(r, g, b);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(7);
+    doc.text("ÉLÈVE CONCERNÉ(E)", 26, y2 + 8, { charSpace: 1 });
+    doc.setTextColor(15, 15, 15);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(15);
+    doc.text(fullName(student).toUpperCase(), 26, y2 + 16);
+    drawInfoGrid(doc, [
+      ["Matricule", student.matricule],
+      ["Date de naissance", fmtDate(student.date_of_birth)],
+    ], 26, y2 + 24, pageW - 52, [r, g, b]);
+    y2 += 46;
+
+    doc.setTextColor(40, 40, 40);
     doc.setFont("helvetica", "normal"); doc.setFontSize(11);
-    const body = lastTransfer.type === "outgoing"
+    const txt = lastTransfer.type === "outgoing"
       ? `est autorisé(e) à être transféré(e)${lastTransfer.destination_school ? ` vers : ${lastTransfer.destination_school}` : ""}, à compter du ${fmtDate(lastTransfer.effective_date)}.`
       : `a été radié(e) de notre établissement à compter du ${fmtDate(lastTransfer.effective_date)}.`;
-    const wb = doc.splitTextToSize(body, pageW - 40);
-    doc.text(wb, 20, y2);
-    y2 += wb.length * 6 + 8;
-    doc.setFont("helvetica", "bold"); doc.text("Motif :", 20, y2);
-    doc.setFont("helvetica", "normal");
-    const rw = doc.splitTextToSize(lastTransfer.reason, pageW - 40);
-    doc.text(rw, 20, y2 + 6);
-    y2 += rw.length * 6 + 24;
-    doc.text(`Fait le ${today}`, pageW - 20, y2, { align: "right" });
-    y2 += 28;
-    doc.setFont("helvetica", "italic");
-    doc.text("Signature et cachet", pageW - 20, y2, { align: "right" });
-    drawFooter(doc, school);
+    const tl = doc.splitTextToSize(txt, pageW - 40);
+    doc.text(tl, 20, y2);
+    y2 += tl.length * 6 + 8;
+
+    const motifH = Math.max(22, doc.splitTextToSize(lastTransfer.reason, pageW - 52).length * 6 + 14);
+    doc.setDrawColor(230, 230, 230);
+    doc.setFillColor(252, 252, 252);
+    doc.roundedRect(20, y2, pageW - 40, motifH, 2, 2, "FD");
+    doc.setTextColor(r, g, b);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(7);
+    doc.text("MOTIF", 26, y2 + 7, { charSpace: 1 });
+    doc.setTextColor(40, 40, 40);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    const rl = doc.splitTextToSize(lastTransfer.reason, pageW - 52);
+    doc.text(rl, 26, y2 + 13);
+    y2 += motifH + 16;
+
+    doc.setDrawColor(220, 220, 220);
+    doc.line(sigX, y2 + 18, sigX + 60, y2 + 18);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+    doc.setTextColor(90, 90, 90);
+    doc.text(`Fait le ${today}`, sigX, y2 + 8);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+    doc.setTextColor(25, 25, 25);
+    doc.text("Signature et cachet", sigX, y2 + 24);
+
+    drawA4Footer(doc, school, ref);
   }
 
   emit(doc, `dossier-${student.matricule}.pdf`, output);
