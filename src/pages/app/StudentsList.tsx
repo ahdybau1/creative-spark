@@ -40,6 +40,14 @@ export default function StudentsList() {
   const { data: students, isLoading } = useStudents(school?.id);
   const [view, setView] = useState<"table" | "grid">("table");
   const [search, setSearch] = useState("");
+  const qc = useQueryClient();
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Supprimer définitivement l'élève « ${name} » ?\nCette action retire aussi inscriptions et documents.`)) return;
+    const { error } = await supabase.from("students").delete().eq("id", id);
+    if (error) toast.error("Erreur", { description: error.message });
+    else { toast.success("Élève supprimé"); qc.invalidateQueries({ queryKey: ["students"] }); }
+  };
 
   const filtered = useMemo(() => {
     if (!students) return [];
