@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Calendar as CalendarIcon, CheckCircle2, Archive } from "lucide-react";
+import { Loader2, Plus, Calendar as CalendarIcon, CheckCircle2, Archive, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
