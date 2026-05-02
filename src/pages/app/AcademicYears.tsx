@@ -235,3 +235,49 @@ function NewYearDialog({
     </DialogContent>
   );
 }
+
+function EditYearDialog({ year, onSaved }: { year: any; onSaved: () => void }) {
+  const [name, setName] = useState(year.name);
+  const [start, setStart] = useState(year.start_date);
+  const [end, setEnd] = useState(year.end_date);
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    setLoading(true);
+    const { error } = await supabase
+      .from("academic_years")
+      .update({ name, start_date: start, end_date: end })
+      .eq("id", year.id);
+    setLoading(false);
+    if (error) toast.error("Erreur", { description: error.message });
+    else { toast.success("Année mise à jour"); onSaved(); }
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader><DialogTitle>Modifier l'année scolaire</DialogTitle></DialogHeader>
+      <div className="space-y-4 py-2">
+        <div className="space-y-2">
+          <Label>Nom</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label>Début</Label>
+            <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Fin</Label>
+            <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+          </div>
+        </div>
+      </div>
+      <DialogFooter>
+        <Button onClick={submit} disabled={loading} className="gap-2">
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          Enregistrer
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
