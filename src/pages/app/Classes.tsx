@@ -269,6 +269,31 @@ export default function ClassesPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Edit dialogs */}
+      {editLvl && (
+        <Dialog open onOpenChange={(o) => !o && setEditLvl(null)}>
+          <EditLevelDialog
+            level={editLvl}
+            onSaved={() => {
+              setEditLvl(null);
+              qc.invalidateQueries({ queryKey: ["levels"] });
+            }}
+          />
+        </Dialog>
+      )}
+      {editCls && (
+        <Dialog open onOpenChange={(o) => !o && setEditCls(null)}>
+          <EditClassDialog
+            klass={editCls}
+            levels={levels ?? []}
+            onSaved={() => {
+              setEditCls(null);
+              qc.invalidateQueries({ queryKey: ["classes"] });
+            }}
+          />
+        </Dialog>
+      )}
     </div>
   );
 }
