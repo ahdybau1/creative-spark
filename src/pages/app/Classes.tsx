@@ -150,7 +150,27 @@ export default function ClassesPage() {
                         <div className="text-xs text-muted-foreground mt-0.5">{c.section}</div>
                       )}
                     </div>
-                    {c.level && <Badge variant="secondary">{c.level.short_code}</Badge>}
+                    <div className="flex items-center gap-1">
+                      {c.level && <Badge variant="secondary">{c.level.short_code}</Badge>}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setEditCls(c)} className="gap-2">
+                            <Pencil className="h-4 w-4" /> Modifier
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => deleteClass(c.id, c.name)}
+                            className="gap-2 text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" /> Supprimer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                   <div className="mt-4 space-y-1.5 text-sm">
                     <div className="flex items-center justify-between text-muted-foreground">
