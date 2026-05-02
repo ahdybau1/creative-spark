@@ -187,6 +187,11 @@ export default function Staff() {
                       staff={s}
                       onRemoveRole={(role) => removeRoleMutation.mutate({ user_id: s.user_id, role })}
                       onAddRole={(role) => addRoleMutation.mutate({ user_id: s.user_id, role })}
+                      onRemoveAll={() => {
+                        if (confirm(`Retirer ${s.full_name ?? s.email} du personnel ?\nTous ses rôles dans cette école seront supprimés.`)) {
+                          removeAllRolesMutation.mutate(s.user_id);
+                        }
+                      }}
                     />
                   ))}
                 </TableBody>
