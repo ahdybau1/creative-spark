@@ -224,7 +224,7 @@ export default function ClassesPage() {
                     <th className="text-left px-4 py-3">Code</th>
                     <th className="text-left px-4 py-3">Nom</th>
                     <th className="text-left px-4 py-3">Cycle</th>
-                    <th className="text-right px-4 py-3 w-16">Action</th>
+                    <th className="text-right px-4 py-3 w-24">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -234,6 +234,15 @@ export default function ClassesPage() {
                       <td className="px-4 py-3">{l.name}</td>
                       <td className="px-4 py-3 text-muted-foreground">{l.cycle ?? "—"}</td>
                       <td className="px-4 py-3 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setEditLvl(l)}
+                          title="Modifier"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -247,6 +256,7 @@ export default function ClassesPage() {
                               qc.invalidateQueries({ queryKey: ["levels"] });
                             }
                           }}
+                          title="Supprimer"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
