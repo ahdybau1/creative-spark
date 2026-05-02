@@ -24,6 +24,14 @@ export default function AcademicYears() {
   const { data: years, isLoading } = useAcademicYears(school?.id);
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
+
+  const remove = async (id: string, name: string) => {
+    if (!confirm(`Supprimer définitivement l'année « ${name} » ?\nCela ne fonctionnera pas si des classes ou inscriptions y sont attachées.`)) return;
+    const { error } = await supabase.from("academic_years").delete().eq("id", id);
+    if (error) toast.error("Erreur", { description: error.message });
+    else { toast.success("Supprimé"); qc.invalidateQueries({ queryKey: ["academic-years"] }); }
+  };
 
   const setActive = async (id: string) => {
     if (!school) return;
