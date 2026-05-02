@@ -49,6 +49,10 @@ export function StudentDocuments({ student }: { student: any }) {
     nationality: student.nationality,
     photo_url: student.photo_url,
     blood_type: student.blood_type,
+    allergies: student.allergies,
+    address: student.address,
+    emergency_contact_name: student.emergency_contact_name,
+    emergency_contact_phone: student.emergency_contact_phone,
   };
 
   async function fetchYearName(): Promise<string | null> {
