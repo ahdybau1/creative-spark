@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
-import { UserPlus, Copy, Loader2, Briefcase, ShieldOff } from "lucide-react";
+import { UserPlus, Copy, Loader2, Briefcase, ShieldOff, Trash2 } from "lucide-react";
 
 interface StaffRow {
   user_id: string;
