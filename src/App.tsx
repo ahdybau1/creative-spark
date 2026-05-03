@@ -24,6 +24,11 @@ import StudentsList from "./pages/app/StudentsList";
 import StudentRegistration from "./pages/app/StudentRegistration";
 import StudentDetail from "./pages/app/StudentDetail";
 import Staff from "./pages/app/Staff";
+import Subjects from "./pages/app/Subjects";
+import Timetable from "./pages/app/Timetable";
+import Attendance from "./pages/app/Attendance";
+import Grades from "./pages/app/Grades";
+import Finance from "./pages/app/Finance";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +60,12 @@ const App = () => (
                 <Route path="students/new" element={<StudentRegistration />} />
                 <Route path="students/:id" element={<StudentDetail />} />
                 <Route path="staff" element={<Staff />} />
+                <Route path="subjects" element={<Subjects />} />
+                <Route path="timetable" element={<Timetable />} />
+                <Route path="attendance" element={<Attendance />} />
+                <Route path="grades" element={<Grades />} />
+                <Route path="finance" element={<Finance />} />
+                <Route path="fees" element={<Finance />} />
                 {/* Catch-all inside /app → Placeholder for not-yet-built modules */}
                 <Route path="*" element={<Placeholder />} />
               </Route>
