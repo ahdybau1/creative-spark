@@ -186,7 +186,25 @@ function GradesEntryDialog({ assessment, classId, yearId, onSaved }: any) {
     setScores(m);
   }, [gradesQ.data]);
 
+  const [saving, setSaving] = useState(false);
+
+  const validate = (): string | null => {
+    const max = Number(assessment.max_score);
+    for (const s of studentsQ.data ?? []) {
+      const raw = scores[s.id]?.trim();
+      if (!raw) continue; // absent -> ok
+      const n = Number(raw);
+      if (Number.isNaN(n)) return `Note invalide pour ${s.last_name} ${s.first_name}`;
+      if (n < 0) return `Note négative pour ${s.last_name} ${s.first_name}`;
+      if (n > max) return `Note > ${max} pour ${s.last_name} ${s.first_name}`;
+    }
+    return null;
+  };
+
   const save = async () => {
+    const err = validate();
+    if (err) return toast.error(err);
+    setSaving(true);
     const rows = (studentsQ.data ?? []).map((s: any) => {
       const v = scores[s.id]?.trim();
       return {
@@ -194,15 +212,31 @@ function GradesEntryDialog({ assessment, classId, yearId, onSaved }: any) {
         score: v ? Number(v) : null, is_absent: !v,
       };
     });
-    await supabase.from("grades").delete().eq("assessment_id", assessment.id);
-    const { error } = await supabase.from("grades").insert(rows);
+    // Atomic upsert (no delete)
+    const { error } = await supabase.from("grades").upsert(rows, {
+      onConflict: "assessment_id,student_id",
+    });
+    setSaving(false);
     if (error) toast.error(error.message);
     else { toast.success("Notes enregistrées"); onSaved(); }
   };
 
+  const stats = (() => {
+    const vals = Object.values(scores).map((v) => Number(v)).filter((n) => !Number.isNaN(n) && n !== 0 || (n === 0));
+    const filtered = Object.values(scores).filter((v) => v?.trim()).map((v) => Number(v)).filter((n) => !Number.isNaN(n));
+    if (!filtered.length) return null;
+    const avg = filtered.reduce((a, b) => a + b, 0) / filtered.length;
+    return { count: filtered.length, avg: avg.toFixed(2), max: Math.max(...filtered), min: Math.min(...filtered) };
+  })();
+
   return (
     <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-      <DialogHeader><DialogTitle>Saisir les notes — {assessment.name}</DialogTitle></DialogHeader>
+      <DialogHeader>
+        <DialogTitle>Saisir les notes — {assessment.name}</DialogTitle>
+        <p className="text-xs text-muted-foreground">
+          Barème : /{assessment.max_score} · coefficient ×{assessment.coefficient} · vide = absent
+        </p>
+      </DialogHeader>
       {studentsQ.isLoading ? <Loader2 className="h-6 w-6 animate-spin mx-auto" /> : (
         <div className="space-y-2 py-2">
           {studentsQ.data?.map((s: any) => (
@@ -211,14 +245,26 @@ function GradesEntryDialog({ assessment, classId, yearId, onSaved }: any) {
                 <div className="font-medium text-sm">{s.last_name} {s.first_name}</div>
                 <div className="text-xs text-muted-foreground font-mono">{s.matricule}</div>
               </div>
-              <Input type="number" step="0.25" max={assessment.max_score} placeholder="ABS" className="w-24"
+              <Input type="number" step="0.25" min={0} max={assessment.max_score} placeholder="ABS" className="w-24"
                 value={scores[s.id] ?? ""} onChange={(e) => setScores({ ...scores, [s.id]: e.target.value })} />
               <span className="text-xs text-muted-foreground">/{assessment.max_score}</span>
             </div>
           ))}
         </div>
       )}
-      <DialogFooter><Button onClick={save} className="gap-2"><Save className="h-4 w-4" />Enregistrer</Button></DialogFooter>
+      {stats && (
+        <div className="rounded-lg border bg-muted/30 p-3 text-xs flex justify-between">
+          <span>Saisies : <b>{stats.count}</b></span>
+          <span>Moy : <b>{stats.avg}</b></span>
+          <span>Min : <b>{stats.min}</b></span>
+          <span>Max : <b>{stats.max}</b></span>
+        </div>
+      )}
+      <DialogFooter>
+        <Button onClick={save} disabled={saving} className="gap-2">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Enregistrer
+        </Button>
+      </DialogFooter>
     </DialogContent>
   );
 }

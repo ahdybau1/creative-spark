@@ -29,6 +29,8 @@ import Timetable from "./pages/app/Timetable";
 import Attendance from "./pages/app/Attendance";
 import Grades from "./pages/app/Grades";
 import Finance from "./pages/app/Finance";
+import Notifications from "./pages/app/Notifications";
+import Messages from "./pages/app/Messages";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +68,8 @@ const App = () => (
                 <Route path="grades" element={<Grades />} />
                 <Route path="finance" element={<Finance />} />
                 <Route path="fees" element={<Finance />} />
+                <Route path="notifications" element={<Notifications />} />
+                <Route path="messages" element={<Messages />} />
                 {/* Catch-all inside /app → Placeholder for not-yet-built modules */}
                 <Route path="*" element={<Placeholder />} />
               </Route>

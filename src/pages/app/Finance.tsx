@@ -73,6 +73,7 @@ export default function FinancePage() {
         <TabsList>
           <TabsTrigger value="items"><Wallet className="h-4 w-4 mr-2" />Frais ({itemsQ.data?.length ?? 0})</TabsTrigger>
           <TabsTrigger value="payments"><CreditCard className="h-4 w-4 mr-2" />Paiements ({paymentsQ.data?.length ?? 0})</TabsTrigger>
+          <TabsTrigger value="balance"><Wallet className="h-4 w-4 mr-2" />Soldes élèves</TabsTrigger>
         </TabsList>
 
         <TabsContent value="items" className="mt-6">
@@ -143,7 +144,77 @@ export default function FinancePage() {
             </div>
           )}
         </TabsContent>
+
+        <TabsContent value="balance" className="mt-6">
+          <BalancePanel
+            students={studentsQ.data ?? []}
+            items={itemsQ.data ?? []}
+            payments={paymentsQ.data ?? []}
+            currency={school.currency}
+          />
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function BalancePanel({ students, items, payments, currency }: any) {
+  const [studentId, setStudentId] = useState(students[0]?.id ?? "");
+  const totalDue = items.filter((i: any) => i.is_mandatory).reduce((a: number, b: any) => a + Number(b.amount), 0);
+  const studentPays = payments.filter((p: any) => p.student_id === studentId);
+  const totalPaid = studentPays.reduce((a: number, b: any) => a + Number(b.amount), 0);
+  const balance = totalDue - totalPaid;
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2 max-w-md">
+        <Label>Élève</Label>
+        <select className="w-full h-10 px-3 rounded-md border bg-background text-sm" value={studentId} onChange={(e) => setStudentId(e.target.value)}>
+          {students.map((s: any) => <option key={s.id} value={s.id}>{s.last_name} {s.first_name} ({s.matricule})</option>)}
+        </select>
+      </div>
+      {studentId && (
+        <>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <div className="rounded-2xl border bg-card p-5">
+              <div className="text-xs text-muted-foreground">Dû (frais obligatoires)</div>
+              <div className="text-2xl font-bold mt-1">{totalDue.toLocaleString()} {currency}</div>
+            </div>
+            <div className="rounded-2xl border bg-card p-5">
+              <div className="text-xs text-muted-foreground">Payé</div>
+              <div className="text-2xl font-bold mt-1 text-emerald-600">{totalPaid.toLocaleString()} {currency}</div>
+            </div>
+            <div className="rounded-2xl border bg-card p-5">
+              <div className="text-xs text-muted-foreground">Solde</div>
+              <div className={`text-2xl font-bold mt-1 ${balance > 0 ? "text-destructive" : "text-emerald-600"}`}>
+                {balance.toLocaleString()} {currency}
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl border bg-card overflow-hidden">
+            <div className="px-4 py-3 border-b font-semibold text-sm">Historique de paiements</div>
+            {studentPays.length === 0 ? (
+              <div className="p-6 text-center text-sm text-muted-foreground">Aucun paiement.</div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                  <tr><th className="text-left px-4 py-2">Date</th><th className="text-left px-4 py-2">Frais</th><th className="text-left px-4 py-2">Méthode</th><th className="text-right px-4 py-2">Montant</th></tr>
+                </thead>
+                <tbody>
+                  {studentPays.map((p: any) => (
+                    <tr key={p.id} className="border-t">
+                      <td className="px-4 py-2">{p.paid_at}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{p.item?.name ?? "—"}</td>
+                      <td className="px-4 py-2"><Badge variant="outline">{p.method}</Badge></td>
+                      <td className="px-4 py-2 text-right font-semibold">{Number(p.amount).toLocaleString()} {currency}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
