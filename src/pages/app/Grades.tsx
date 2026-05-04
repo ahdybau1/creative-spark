@@ -231,7 +231,12 @@ function GradesEntryDialog({ assessment, classId, yearId, onSaved }: any) {
 
   return (
     <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-      <DialogHeader><DialogTitle>Saisir les notes — {assessment.name}</DialogTitle></DialogHeader>
+      <DialogHeader>
+        <DialogTitle>Saisir les notes — {assessment.name}</DialogTitle>
+        <p className="text-xs text-muted-foreground">
+          Barème : /{assessment.max_score} · coefficient ×{assessment.coefficient} · vide = absent
+        </p>
+      </DialogHeader>
       {studentsQ.isLoading ? <Loader2 className="h-6 w-6 animate-spin mx-auto" /> : (
         <div className="space-y-2 py-2">
           {studentsQ.data?.map((s: any) => (
@@ -240,14 +245,26 @@ function GradesEntryDialog({ assessment, classId, yearId, onSaved }: any) {
                 <div className="font-medium text-sm">{s.last_name} {s.first_name}</div>
                 <div className="text-xs text-muted-foreground font-mono">{s.matricule}</div>
               </div>
-              <Input type="number" step="0.25" max={assessment.max_score} placeholder="ABS" className="w-24"
+              <Input type="number" step="0.25" min={0} max={assessment.max_score} placeholder="ABS" className="w-24"
                 value={scores[s.id] ?? ""} onChange={(e) => setScores({ ...scores, [s.id]: e.target.value })} />
               <span className="text-xs text-muted-foreground">/{assessment.max_score}</span>
             </div>
           ))}
         </div>
       )}
-      <DialogFooter><Button onClick={save} className="gap-2"><Save className="h-4 w-4" />Enregistrer</Button></DialogFooter>
+      {stats && (
+        <div className="rounded-lg border bg-muted/30 p-3 text-xs flex justify-between">
+          <span>Saisies : <b>{stats.count}</b></span>
+          <span>Moy : <b>{stats.avg}</b></span>
+          <span>Min : <b>{stats.min}</b></span>
+          <span>Max : <b>{stats.max}</b></span>
+        </div>
+      )}
+      <DialogFooter>
+        <Button onClick={save} disabled={saving} className="gap-2">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Enregistrer
+        </Button>
+      </DialogFooter>
     </DialogContent>
   );
 }
