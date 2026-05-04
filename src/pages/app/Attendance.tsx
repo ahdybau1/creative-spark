@@ -90,10 +90,18 @@ export default function AttendancePage() {
     const rows = (studentsQ.data ?? []).map((s: any) => ({
       session_id: sessionId, student_id: s.id, status: marks[s.id] ?? "present",
     }));
-    await supabase.from("attendances").delete().eq("session_id", sessionId);
-    const { error } = await supabase.from("attendances").insert(rows);
+    // Atomic upsert via unique (session_id, student_id)
+    const { error } = await supabase.from("attendances").upsert(rows, {
+      onConflict: "session_id,student_id",
+    });
     if (error) toast.error(error.message);
     else { toast.success("Pointage enregistré"); qc.invalidateQueries({ queryKey: ["atts"] }); }
+  };
+
+  const setAll = (status: Status) => {
+    const m: Record<string, Status> = {};
+    (studentsQ.data ?? []).forEach((s: any) => (m[s.id] = status));
+    setMarks(m);
   };
 
   if (!school) return <div className="container py-10">Aucune école.</div>;
