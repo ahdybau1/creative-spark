@@ -144,7 +144,6 @@ export default function FinancePage() {
             </div>
           )}
         </TabsContent>
-        </TabsContent>
 
         <TabsContent value="balance" className="mt-6">
           <BalancePanel
