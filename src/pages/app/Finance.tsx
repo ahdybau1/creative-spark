@@ -73,6 +73,7 @@ export default function FinancePage() {
         <TabsList>
           <TabsTrigger value="items"><Wallet className="h-4 w-4 mr-2" />Frais ({itemsQ.data?.length ?? 0})</TabsTrigger>
           <TabsTrigger value="payments"><CreditCard className="h-4 w-4 mr-2" />Paiements ({paymentsQ.data?.length ?? 0})</TabsTrigger>
+          <TabsTrigger value="balance"><Wallet className="h-4 w-4 mr-2" />Soldes élèves</TabsTrigger>
         </TabsList>
 
         <TabsContent value="items" className="mt-6">
