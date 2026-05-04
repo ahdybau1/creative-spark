@@ -142,6 +142,12 @@ export default function AttendancePage() {
         <p className="text-muted-foreground">Aucun élève inscrit.</p>
       ) : (
         <>
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-muted-foreground">Tout marquer :</span>
+            {STATUSES.map((st) => (
+              <button key={st.v} onClick={() => setAll(st.v)} className={`px-2 py-1 rounded border ${st.cls}`}>{st.label}</button>
+            ))}
+          </div>
           <div className="rounded-2xl border bg-card overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
