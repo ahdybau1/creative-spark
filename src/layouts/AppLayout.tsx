@@ -14,6 +14,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { NotificationBell } from "@/components/NotificationBell";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { useAuth } from "@/providers/AuthProvider";
 import { NAV_BY_ROLE } from "@/lib/navigation";
@@ -206,6 +207,7 @@ export default function AppLayout() {
             </div>
           </div>
           <div className="ml-auto flex items-center gap-1.5">
+            <NotificationBell />
             <LanguageSwitcher />
             <ThemeToggle />
           </div>
