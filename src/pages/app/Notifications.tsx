@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
@@ -13,6 +14,15 @@ export default function NotificationsPage() {
     enabled: !!user,
     queryFn: async () => (await supabase.from("notifications").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(100)).data ?? [],
   });
+
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase.channel(`notif-page-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        () => qc.invalidateQueries({ queryKey: ["notifications", user.id] }))
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user, qc]);
 
   const markRead = async (id: string) => {
     await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
