@@ -31,6 +31,11 @@ import Grades from "./pages/app/Grades";
 import Finance from "./pages/app/Finance";
 import Notifications from "./pages/app/Notifications";
 import Messages from "./pages/app/Messages";
+import Stats from "./pages/app/Stats";
+import Users from "./pages/app/Users";
+import Audit from "./pages/app/Audit";
+import Integrations from "./pages/app/Integrations";
+import Settings from "./pages/app/Settings";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +75,12 @@ const App = () => (
                 <Route path="fees" element={<Finance />} />
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="messages" element={<Messages />} />
+                <Route path="stats" element={<Stats />} />
+                <Route path="users" element={<Users />} />
+                <Route path="audit" element={<Audit />} />
+                <Route path="integrations" element={<Integrations />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="school-settings" element={<SchoolSettings />} />
                 {/* Catch-all inside /app → Placeholder for not-yet-built modules */}
                 <Route path="*" element={<Placeholder />} />
               </Route>
