@@ -26,4 +26,18 @@
 ✅ DB : notifications + messagerie (conversations, membres, messages, RLS)
 ✅ Pages /app/notifications et /app/messages (réaltime via Supabase channels)
 
-⏭️ Prochaine livraison : page Établissement (super_admin), Stats globales, Utilisateurs & Rôles, Sécurité & Audit, Intégrations, Paramètres app, scaffolding email pour notifications par email.
+## Livraison du 5 mai 2026 — Admin & Communication
+✅ Pages : Stats, Users, Audit, Integrations, Settings (thème + langue + palette école)
+✅ NotificationBell temps réel dans le header (badge unread + toasts)
+✅ Messages : groupes, gestion membres (director/créateur), realtime
+✅ Realtime activé (REPLICA IDENTITY FULL) sur messages, notifications, conversations
+
+## Livraison du 6 mai 2026 — Email pour notifications
+✅ Edge function `send-notification` : crée notif in-app + email Resend (optionnel)
+✅ Helper `src/lib/notify.ts` : `sendNotification({ user_ids, title, body, link, send_email })`
+ℹ️ Pour activer l'email : ajouter le secret `RESEND_API_KEY` (et `RESEND_FROM` optionnel)
+
+## Prochaine action
+- Brancher `sendNotification` sur les événements clés (nouveau message, note publiée, paiement reçu, absence)
+- Bulletins automatiques (PDF par trimestre) à partir des notes saisies
+- Vue parent/élève dédiée (lecture seule simplifiée)
