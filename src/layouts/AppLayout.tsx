@@ -16,6 +16,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { NotificationBell } from "@/components/NotificationBell";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { RoleGuard } from "@/components/RoleGuard";
 import { useAuth } from "@/providers/AuthProvider";
 import { NAV_BY_ROLE } from "@/lib/navigation";
 import { ROLE_META } from "@/lib/roles";
@@ -47,16 +48,17 @@ export default function AppLayout() {
 
   if (!user) return null;
 
-  // Mode dev : on fusionne la navigation de tous les rôles, dédupliquée par href
-  const allItems = new Map<string, ReturnType<typeof Object> extends never ? never : any>();
-  Object.values(NAV_BY_ROLE).forEach((roleGroups) => {
-    roleGroups.forEach((g) => {
-      g.items.forEach((it) => {
-        if (!allItems.has(it.href)) allItems.set(it.href, it);
-      });
-    });
-  });
-  const groups = [{ label: "Tous les modules (mode dev)", items: Array.from(allItems.values()) }];
+  // Navigation stricte par rôle (super_admin = vue dev fusionnée)
+  let groups: { label: string; items: any[] }[];
+  if (activeRole === "super_admin") {
+    const allItems = new Map<string, any>();
+    Object.values(NAV_BY_ROLE).forEach((roleGroups) =>
+      roleGroups.forEach((g) => g.items.forEach((it) => { if (!allItems.has(it.href)) allItems.set(it.href, it); }))
+    );
+    groups = [{ label: "Tous les modules", items: Array.from(allItems.values()) }];
+  } else {
+    groups = activeRole ? NAV_BY_ROLE[activeRole] ?? [] : [];
+  }
   const roleMeta = activeRole ? ROLE_META[activeRole] : null;
   const initials =
     (user.user_metadata?.full_name as string | undefined)
@@ -214,7 +216,7 @@ export default function AppLayout() {
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          <Outlet />
+          <RoleGuard><Outlet /></RoleGuard>
         </main>
       </div>
     </div>

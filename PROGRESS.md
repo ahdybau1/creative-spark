@@ -45,7 +45,15 @@
 ✅ Page `/app/class-groups` : CRUD jumelages + ajout au menu director
 ℹ️ Pour activer l'email : ajouter le secret `RESEND_API_KEY` (et `RESEND_FROM` optionnel)
 
+## Livraison du 6 mai 2026 (suite) — Cloisonnement par profil
+✅ Sidebar : navigation STRICTE par rôle actif (fini le mode dev fusionné)
+✅ super_admin garde la vue fusionnée + accès total
+✅ `RoleGuard` global : URL non autorisée pour le rôle → écran "Accès non autorisé"
+✅ Helpers `src/lib/role-routes.ts` (allowedRoutesForRole, isPathAllowed)
+✅ Compléments NAV pour deputy_director et secretary (modules manquants)
+
 ## Prochaine action
-- Brancher `sendNotification` sur les événements clés (nouveau message, note publiée, paiement reçu, absence)
-- Bulletins automatiques (PDF par trimestre) à partir des notes saisies
-- Vue parent/élève dédiée (lecture seule simplifiée)
+- Compléter/affiner les NAV des autres rôles selon cahier des charges (parent, student, teacher, main_teacher, supervisor, accountant…)
+- Brancher `sendNotification` sur les événements clés (message, note, paiement, absence)
+- Bulletins automatiques (PDF par trimestre)
+- Vue parent/élève dédiée (lecture seule)

@@ -86,7 +86,13 @@ export const NAV_BY_ROLE: Record<AppRole, NavGroup[]> = {
       label: "Académique",
       items: [
         { label: "Tableau de bord", href: "/app", icon: Home },
+        { label: "Élèves", href: "/app/students", icon: GraduationCap },
+        { label: "Classes", href: "/app/classes", icon: BookOpen },
+        { label: "Matières", href: "/app/subjects", icon: BookOpen },
         { label: "Emplois du temps", href: "/app/timetable", icon: Calendar },
+        { label: "Jumelages classes", href: "/app/class-groups", icon: Network },
+        { label: "Présences", href: "/app/attendance", icon: ClipboardCheck },
+        { label: "Notes", href: "/app/grades", icon: FileText },
         { label: "Discipline", href: "/app/discipline", icon: AlertCircle },
         { label: "Examens", href: "/app/exams", icon: FileText },
       ],
@@ -96,12 +102,15 @@ export const NAV_BY_ROLE: Record<AppRole, NavGroup[]> = {
 
   secretary: [
     {
-      label: "Inscriptions",
+      label: "Inscriptions & administratif",
       items: [
         { label: "Tableau de bord", href: "/app", icon: Home },
         { label: "Nouvel élève", href: "/app/students/new", icon: UserPlus },
         { label: "Liste élèves", href: "/app/students", icon: GraduationCap },
+        { label: "Classes", href: "/app/classes", icon: BookOpen },
+        { label: "Années scolaires", href: "/app/academic-years", icon: Calendar },
         { label: "Documents", href: "/app/documents", icon: FileText },
+        { label: "Frais & Paiements", href: "/app/fees", icon: CreditCard },
       ],
     },
     { label: "", items: COMMON_BOTTOM },
