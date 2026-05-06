@@ -25,6 +25,7 @@ import StudentRegistration from "./pages/app/StudentRegistration";
 import StudentDetail from "./pages/app/StudentDetail";
 import Staff from "./pages/app/Staff";
 import Subjects from "./pages/app/Subjects";
+import ClassGroups from "./pages/app/ClassGroups";
 import Timetable from "./pages/app/Timetable";
 import Attendance from "./pages/app/Attendance";
 import Grades from "./pages/app/Grades";
@@ -68,6 +69,7 @@ const App = () => (
                 <Route path="students/:id" element={<StudentDetail />} />
                 <Route path="staff" element={<Staff />} />
                 <Route path="subjects" element={<Subjects />} />
+                <Route path="class-groups" element={<ClassGroups />} />
                 <Route path="timetable" element={<Timetable />} />
                 <Route path="attendance" element={<Attendance />} />
                 <Route path="grades" element={<Grades />} />
