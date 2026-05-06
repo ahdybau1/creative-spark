@@ -63,6 +63,7 @@ export const NAV_BY_ROLE: Record<AppRole, NavGroup[]> = {
         { label: "Classes", href: "/app/classes", icon: BookOpen },
         { label: "Matières", href: "/app/subjects", icon: BookOpen },
         { label: "Emplois du temps", href: "/app/timetable", icon: Calendar },
+        { label: "Jumelages classes", href: "/app/class-groups", icon: Network },
         { label: "Présences", href: "/app/attendance", icon: ClipboardCheck },
         { label: "Notes", href: "/app/grades", icon: FileText },
         { label: "Personnel", href: "/app/staff", icon: Briefcase },

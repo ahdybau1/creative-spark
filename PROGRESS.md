@@ -37,6 +37,14 @@
 ✅ Helper `src/lib/notify.ts` : `sendNotification({ user_ids, title, body, link, send_email })`
 ℹ️ Pour activer l'email : ajouter le secret `RESEND_API_KEY` (et `RESEND_FROM` optionnel)
 
+## Livraison du 6 mai 2026 — Anti-conflit EDT + Email notifs
+✅ Edge function `send-notification` (in-app + email Resend optionnel) + helper `src/lib/notify.ts`
+✅ Tables `class_groups` / `class_group_members` (jumelages de classes) + RLS director/secrétaire
+✅ Trigger anti-conflit `timetable_slots` : un prof ne peut pas être sur 2 classes au même créneau (sauf jumelage). Idem pour les salles.
+✅ Trigger anti-conflit `attendance_sessions` : pas de double session prof au même moment
+✅ Page `/app/class-groups` : CRUD jumelages + ajout au menu director
+ℹ️ Pour activer l'email : ajouter le secret `RESEND_API_KEY` (et `RESEND_FROM` optionnel)
+
 ## Prochaine action
 - Brancher `sendNotification` sur les événements clés (nouveau message, note publiée, paiement reçu, absence)
 - Bulletins automatiques (PDF par trimestre) à partir des notes saisies
