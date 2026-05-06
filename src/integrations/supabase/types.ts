@@ -264,6 +264,62 @@ export type Database = {
           },
         ]
       }
+      class_group_members: {
+        Row: {
+          class_id: string
+          created_at: string
+          group_id: string
+          id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          group_id: string
+          id?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "class_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_groups: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          school_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          school_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          school_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       class_subjects: {
         Row: {
           class_id: string
@@ -1426,6 +1482,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      classes_share_group: {
+        Args: { _class_a: string; _class_b: string }
+        Returns: boolean
+      }
       generate_matricule: {
         Args: { _level_code?: string; _school_id: string }
         Returns: string
