@@ -90,6 +90,19 @@ const App = () => (
                 <Route path="integrations" element={<Integrations />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="school-settings" element={<SchoolSettings />} />
+
+                {/* Espace enseignant */}
+                <Route path="my-classes" element={<MyClasses />} />
+
+                {/* Espace élève */}
+                <Route path="my-timetable" element={<MyTimetable />} />
+                <Route path="my-grades" element={<MyGrades />} />
+
+                {/* Espace parent */}
+                <Route path="children" element={<Children />} />
+                <Route path="children-grades" element={<ChildrenGrades />} />
+                <Route path="children-absences" element={<ChildrenAbsences />} />
+                <Route path="payments" element={<Payments />} />
                 {/* Catch-all inside /app → Placeholder for not-yet-built modules */}
                 <Route path="*" element={<Placeholder />} />
               </Route>
