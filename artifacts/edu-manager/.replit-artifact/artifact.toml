@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "EduManager"
+description = "A comprehensive school management platform for administrators, teachers, students, and parents. Manages students, classes, grades, attendance, finance, timetables, staff, and more — with role-based access for all school stakeholders."
+version = "1.0.0"
+id = "artifacts/edu-manager"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19602
+
+[services.development]
+run = "pnpm --filter @workspace/edu-manager run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/edu-manager", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/edu-manager/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19602"
+BASE_PATH = "/"
