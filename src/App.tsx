@@ -37,6 +37,13 @@ import Users from "./pages/app/Users";
 import Audit from "./pages/app/Audit";
 import Integrations from "./pages/app/Integrations";
 import Settings from "./pages/app/Settings";
+import MyClasses from "./pages/app/MyClasses";
+import MyTimetable from "./pages/app/MyTimetable";
+import MyGrades from "./pages/app/MyGrades";
+import Children from "./pages/app/Children";
+import ChildrenGrades from "./pages/app/ChildrenGrades";
+import ChildrenAbsences from "./pages/app/ChildrenAbsences";
+import Payments from "./pages/app/Payments";
 
 const queryClient = new QueryClient();
 
@@ -83,6 +90,19 @@ const App = () => (
                 <Route path="integrations" element={<Integrations />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="school-settings" element={<SchoolSettings />} />
+
+                {/* Espace enseignant */}
+                <Route path="my-classes" element={<MyClasses />} />
+
+                {/* Espace élève */}
+                <Route path="my-timetable" element={<MyTimetable />} />
+                <Route path="my-grades" element={<MyGrades />} />
+
+                {/* Espace parent */}
+                <Route path="children" element={<Children />} />
+                <Route path="children-grades" element={<ChildrenGrades />} />
+                <Route path="children-absences" element={<ChildrenAbsences />} />
+                <Route path="payments" element={<Payments />} />
                 {/* Catch-all inside /app → Placeholder for not-yet-built modules */}
                 <Route path="*" element={<Placeholder />} />
               </Route>

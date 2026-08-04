@@ -12,48 +12,19 @@
   - `/app/grades` (évaluations + saisie notes par élève)
   - `/app/finance` (frais + encaissement paiements)
 
-## Prochaine action
-- Phase 3 : modules complémentaires (bulletins auto, communication, bibliothèque, transport)
-- Améliorer les vues parent/élève côté lecture
-
-## Livraison du 4 mai 2026 — Cœur scolaire renforcé
-
-✅ Validations notes (0 ≤ note ≤ max), barème affiché, stats live (moy/min/max)
-✅ Sauvegarde atomique notes & présences (upsert sur contraintes uniques)
-✅ Présences : actions bulk "Tout marquer P/A/R/E"
-✅ Finance : onglet "Soldes élèves" (dû / payé / solde + historique)
-✅ EDT : grille calendrier hebdo (jours × heures) avec slots positionnés
-✅ DB : notifications + messagerie (conversations, membres, messages, RLS)
-✅ Pages /app/notifications et /app/messages (réaltime via Supabase channels)
-
-## Livraison du 5 mai 2026 — Admin & Communication
-✅ Pages : Stats, Users, Audit, Integrations, Settings (thème + langue + palette école)
-✅ NotificationBell temps réel dans le header (badge unread + toasts)
-✅ Messages : groupes, gestion membres (director/créateur), realtime
-✅ Realtime activé (REPLICA IDENTITY FULL) sur messages, notifications, conversations
-
-## Livraison du 6 mai 2026 — Email pour notifications
-✅ Edge function `send-notification` : crée notif in-app + email Resend (optionnel)
-✅ Helper `src/lib/notify.ts` : `sendNotification({ user_ids, title, body, link, send_email })`
-ℹ️ Pour activer l'email : ajouter le secret `RESEND_API_KEY` (et `RESEND_FROM` optionnel)
-
-## Livraison du 6 mai 2026 — Anti-conflit EDT + Email notifs
-✅ Edge function `send-notification` (in-app + email Resend optionnel) + helper `src/lib/notify.ts`
-✅ Tables `class_groups` / `class_group_members` (jumelages de classes) + RLS director/secrétaire
-✅ Trigger anti-conflit `timetable_slots` : un prof ne peut pas être sur 2 classes au même créneau (sauf jumelage). Idem pour les salles.
-✅ Trigger anti-conflit `attendance_sessions` : pas de double session prof au même moment
-✅ Page `/app/class-groups` : CRUD jumelages + ajout au menu director
-ℹ️ Pour activer l'email : ajouter le secret `RESEND_API_KEY` (et `RESEND_FROM` optionnel)
-
-## Livraison du 6 mai 2026 (suite) — Cloisonnement par profil
-✅ Sidebar : navigation STRICTE par rôle actif (fini le mode dev fusionné)
-✅ super_admin garde la vue fusionnée + accès total
-✅ `RoleGuard` global : URL non autorisée pour le rôle → écran "Accès non autorisé"
-✅ Helpers `src/lib/role-routes.ts` (allowedRoutesForRole, isPathAllowed)
-✅ Compléments NAV pour deputy_director et secretary (modules manquants)
+## Livraison du 6 mai 2026 (suite 2) — Espaces enseignant / élève / parent
+✅ Hook `src/hooks/useMyStudent.ts` (élève lié au compte, enfants du parent, inscription active)
+✅ `/app/my-classes` (enseignant) : classes + matières affectées, effectifs, accès rapide pointage/notes
+✅ `/app/my-timetable` (élève) : EDT hebdo de sa classe
+✅ `/app/my-grades` (élève) : notes + moyenne pondérée (composant réutilisable)
+✅ `/app/children` (parent) : fiches des enfants + classe
+✅ `/app/children-grades` (parent) : notes par enfant (onglets)
+✅ `/app/children-absences` (parent) : absences/retards par enfant
+✅ `/app/payments` (parent) : dû / payé / solde + historique des règlements
+✅ Routes ajoutées dans `src/App.tsx` (plus de Placeholder pour ces modules)
 
 ## Prochaine action
-- Compléter/affiner les NAV des autres rôles selon cahier des charges (parent, student, teacher, main_teacher, supervisor, accountant…)
 - Brancher `sendNotification` sur les événements clés (message, note, paiement, absence)
 - Bulletins automatiques (PDF par trimestre)
-- Vue parent/élève dédiée (lecture seule)
+- Modules enseignant restants : cahier de textes, devoirs
+- Modules parent/élève restants : e-learning, ressources, suivi bus
