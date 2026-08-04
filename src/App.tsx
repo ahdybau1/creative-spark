@@ -37,6 +37,13 @@ import Users from "./pages/app/Users";
 import Audit from "./pages/app/Audit";
 import Integrations from "./pages/app/Integrations";
 import Settings from "./pages/app/Settings";
+import MyClasses from "./pages/app/MyClasses";
+import MyTimetable from "./pages/app/MyTimetable";
+import MyGrades from "./pages/app/MyGrades";
+import Children from "./pages/app/Children";
+import ChildrenGrades from "./pages/app/ChildrenGrades";
+import ChildrenAbsences from "./pages/app/ChildrenAbsences";
+import Payments from "./pages/app/Payments";
 
 const queryClient = new QueryClient();
 
