@@ -22,6 +22,7 @@ import { NAV_BY_ROLE } from "@/lib/navigation";
 import { ROLE_META } from "@/lib/roles";
 import { LogOut, User as UserIcon, Search, Loader2, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { GlobalSearch } from "@/components/GlobalSearch";
 
 export default function AppLayout() {
   const { user, loading, activeRole, signOut } = useAuth();
@@ -198,16 +199,7 @@ export default function AppLayout() {
           <div className="lg:hidden">
             <Logo size="sm" showText={false} />
           </div>
-          <div className="flex-1 max-w-md hidden md:block">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="search"
-                placeholder="Rechercher un élève, une classe…"
-                className="w-full h-9 pl-9 pr-3 rounded-lg border border-border bg-muted/40 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-background transition-smooth"
-              />
-            </div>
-          </div>
+          <GlobalSearch />
           <div className="ml-auto flex items-center gap-1.5">
             <NotificationBell />
             <LanguageSwitcher />

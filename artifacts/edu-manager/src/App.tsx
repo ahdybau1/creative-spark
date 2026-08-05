@@ -44,6 +44,9 @@ import Children from "./pages/app/Children";
 import ChildrenGrades from "./pages/app/ChildrenGrades";
 import ChildrenAbsences from "./pages/app/ChildrenAbsences";
 import Payments from "./pages/app/Payments";
+import Bulletins from "./pages/app/Bulletins";
+import Reports from "./pages/app/Reports";
+import Profile from "./pages/app/Profile";
 
 const queryClient = new QueryClient();
 
@@ -103,6 +106,9 @@ const App = () => (
                 <Route path="children-grades" element={<ChildrenGrades />} />
                 <Route path="children-absences" element={<ChildrenAbsences />} />
                 <Route path="payments" element={<Payments />} />
+                <Route path="bulletins" element={<Bulletins />} />
+                <Route path="reports" element={<Reports />} />
+                <Route path="profile" element={<Profile />} />
 
                 {/* Catch-all inside /app → Placeholder for not-yet-built modules */}
                 <Route path="*" element={<Placeholder />} />

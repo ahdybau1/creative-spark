@@ -120,6 +120,12 @@ export default function StudentDetail() {
           </Link>
         </Button>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild className="gap-1.5">
+            <Link to={`/app/bulletins?student=${student.id}&class=${currentEnrollment?.class_id ?? ""}`}>
+              <FileText className="h-3.5 w-3.5" />
+              Bulletin
+            </Link>
+          </Button>
           <StudentDocuments student={student} />
           <StudentActions student={student} />
         </div>
