@@ -47,6 +47,8 @@ import Payments from "./pages/app/Payments";
 import Bulletins from "./pages/app/Bulletins";
 import Reports from "./pages/app/Reports";
 import Profile from "./pages/app/Profile";
+import Homework from "./pages/app/Homework";
+import MyHomework from "./pages/app/MyHomework";
 
 const queryClient = new QueryClient();
 
