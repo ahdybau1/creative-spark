@@ -47,6 +47,8 @@ import Payments from "./pages/app/Payments";
 import Bulletins from "./pages/app/Bulletins";
 import Reports from "./pages/app/Reports";
 import Profile from "./pages/app/Profile";
+import Homework from "./pages/app/Homework";
+import MyHomework from "./pages/app/MyHomework";
 
 const queryClient = new QueryClient();
 
@@ -96,6 +98,9 @@ const App = () => (
 
                 {/* Espace enseignant */}
                 <Route path="my-classes" element={<MyClasses />} />
+                <Route path="homework" element={<Homework />} />
+                <Route path="my-homework" element={<MyHomework />} />
+
 
                 {/* Espace élève */}
                 <Route path="my-timetable" element={<MyTimetable />} />

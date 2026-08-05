@@ -138,6 +138,8 @@ export const NAV_BY_ROLE: Record<AppRole, NavGroup[]> = {
         { label: "Saisie des notes", href: "/app/grades", icon: FileText },
         { label: "Bulletins", href: "/app/bulletins", icon: Trophy },
         { label: "Pointage", href: "/app/attendance", icon: ClipboardCheck },
+        { label: "Cahier de textes", href: "/app/homework", icon: ClipboardList },
+
       ],
     },
     { label: "", items: COMMON_BOTTOM },
@@ -158,6 +160,8 @@ export const NAV_BY_ROLE: Record<AppRole, NavGroup[]> = {
       items: [
         { label: "Saisie des notes", href: "/app/grades", icon: FileText },
         { label: "Pointage", href: "/app/attendance", icon: ClipboardCheck },
+        { label: "Cahier de textes", href: "/app/homework", icon: ClipboardList },
+
       ],
     },
     { label: "", items: COMMON_BOTTOM },
