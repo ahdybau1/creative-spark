@@ -98,6 +98,9 @@ const App = () => (
 
                 {/* Espace enseignant */}
                 <Route path="my-classes" element={<MyClasses />} />
+                <Route path="homework" element={<Homework />} />
+                <Route path="my-homework" element={<MyHomework />} />
+
 
                 {/* Espace élève */}
                 <Route path="my-timetable" element={<MyTimetable />} />
